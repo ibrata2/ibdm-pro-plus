@@ -67,7 +67,6 @@ public sealed class MainWindow : Window
     private readonly TextBlock _speed = Ui.Text("", 12, Theme.Gold);
     private readonly TextBlock _speedValue = Ui.Ltr("", 12, Theme.Gold, bold: true);
     private readonly TextBlock _detail = Ui.Text("", 12, Theme.Muted);
-    private Button? _updateTool;
 
     private readonly Border _updateBanner = new() { Visibility = Visibility.Collapsed };
 
@@ -94,10 +93,6 @@ public sealed class MainWindow : Window
         _updateBanner.BorderBrush = Theme.Gold;
         _updateBanner.BorderThickness = new Thickness(0, 0, 0, 1);
         _updateBanner.Visibility = Visibility.Visible;
-        if (_updateTool?.Content is not StackPanel sp) return;
-        if (sp.Children[0] is TextBlock g) g.Foreground = Theme.Gold;
-        if (sp.Children[1] is TextBlock t) { t.Text = L.T("تحديث جديد!"); t.Foreground = Theme.Gold; t.FontWeight = FontWeights.SemiBold; }
-        _updateTool.ToolTip = L.F("يتوفر الإصدار {0} — اضغط للتثبيت", version);
     }
     private string _filter = "all";
     private string _sortBy = "date";

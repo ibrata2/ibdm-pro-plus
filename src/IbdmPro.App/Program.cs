@@ -70,7 +70,7 @@ public static class Program
             try
             {
                 var r = Updater.LatestAsync().GetAwaiter().GetResult();
-                File.WriteAllText(args[1], r is null ? "no setup asset" : $"current={Program.Version} latest={r.Version} newer={r.Version > Updater.Current} size={r.Size} url={r.SetupUrl}");
+                File.WriteAllText(args[1], r is null ? $"current={Program.Version} latest=none newer=false" : $"current={Program.Version} latest={r.Version} newer={r.Version > Updater.Current} size={r.Size} url={r.SetupUrl}");
             }
             catch (Exception e) { File.WriteAllText(args[1], "error: " + e.Message); }
             return 0;
@@ -241,3 +241,5 @@ public static class AutoStart
         catch (Exception e) { Log.Write($"startup: {e.Message}"); }
     }
 }
+
+

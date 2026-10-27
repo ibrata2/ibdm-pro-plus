@@ -33,6 +33,8 @@ public static class Updater
         using var timeout = CancellationTokenSource.CreateLinkedTokenSource(ct);
         timeout.CancelAfter(TimeSpan.FromSeconds(20));
         using var resp = await Http.Client.SendAsync(req, timeout.Token);
+        // A new repository has no release until its first successful build publishes one.
+        if (resp.StatusCode == System.Net.HttpStatusCode.NotFound) return null;
         if (!resp.IsSuccessStatusCode) throw new InvalidOperationException(L.F("تعذر الوصول لصفحة التحديثات ({0})", (int)resp.StatusCode));
         using var doc = JsonDocument.Parse(await resp.Content.ReadAsStringAsync(timeout.Token));
         var root = doc.RootElement;
