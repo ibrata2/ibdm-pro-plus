@@ -213,7 +213,7 @@ public static class Theme
     private static Style MakeNav()
     {
         var bd = new FrameworkElementFactory(typeof(Border), "Bd");
-        bd.SetValue(Border.CornerRadiusProperty, new CornerRadius(6));
+        bd.SetValue(Border.CornerRadiusProperty, new CornerRadius(0));
         bd.SetValue(Border.BackgroundProperty, Brushes.Transparent);
         bd.SetValue(Border.PaddingProperty, new Thickness(10, 7, 10, 7));
         var cp = new FrameworkElementFactory(typeof(ContentPresenter));
@@ -273,7 +273,7 @@ public static class Theme
         bd.SetValue(Border.BackgroundProperty, Brushes.Transparent);
         bd.SetValue(Border.BorderBrushProperty, Line);
         bd.SetValue(Border.BorderThicknessProperty, new Thickness(0, 0, 0, 1));
-        bd.SetValue(Border.PaddingProperty, new Thickness(0, 6, 0, 6));
+        bd.SetValue(Border.PaddingProperty, new Thickness(0, 2, 0, 2));
         var rp = new FrameworkElementFactory(typeof(GridViewRowPresenter));
         rp.SetValue(FrameworkElement.VerticalAlignmentProperty, VerticalAlignment.Center);
         bd.AppendChild(rp);
@@ -293,7 +293,7 @@ public static class Theme
         bd.SetValue(Border.BackgroundProperty, Panel);
         bd.SetValue(Border.BorderBrushProperty, Line);
         bd.SetValue(Border.BorderThicknessProperty, new Thickness(0, 0, 0, 1));
-        bd.SetValue(Border.PaddingProperty, new Thickness(8, 8, 8, 8));
+        bd.SetValue(Border.PaddingProperty, new Thickness(7, 5, 7, 5));
         var cp = new FrameworkElementFactory(typeof(ContentPresenter));
         cp.SetValue(FrameworkElement.HorizontalAlignmentProperty, HorizontalAlignment.Left);
         bd.AppendChild(cp);
@@ -392,13 +392,13 @@ public static class Ui
     /// <summary>The big icon-over-text buttons of the main toolbar.</summary>
     public static Button Tool(string text, string glyph, Action click, Brush? color = null)
     {
-        var sp = new StackPanel { MinWidth = 62 };
-        sp.Children.Add(Glyph(glyph, 20, color ?? Theme.Gold));
-        var t = Text(text, 11.5, Theme.Ink);
+        var sp = new StackPanel { MinWidth = 70 };
+        sp.Children.Add(Glyph(glyph, 27, color ?? Theme.Gold));
+        var t = Text(text, 11, Theme.Ink);
         t.HorizontalAlignment = HorizontalAlignment.Center;
         t.Margin = new Thickness(0, 4, 0, 0);
         sp.Children.Add(t);
-        var b = new Button { Style = Theme.ToolButton, Content = sp, Padding = new Thickness(6, 6, 6, 5), Margin = new Thickness(1, 0, 1, 0), ToolTip = text };
+        var b = new Button { Style = Theme.ToolButton, Content = sp, Padding = new Thickness(6, 4, 6, 4), Margin = new Thickness(1, 0, 1, 0), ToolTip = text };
         b.Click += (_, _) => click();
         return b;
     }
@@ -552,3 +552,5 @@ public static class Ui
 
     public static void Message(Window? owner, string title, string message) => Ask(owner, title, message, L.T("حسناً"));
 }
+
+

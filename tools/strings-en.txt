@@ -358,4 +358,12 @@ Queue
 Queue name
 Create
 Move to queue
+Tasks
+Help
+Register
+Options
+Category
+Last date
+Description
+Categories
 

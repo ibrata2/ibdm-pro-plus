@@ -27,7 +27,11 @@ public sealed class Row : INotifyPropertyChanged
     public string PercentText => Item.Status == DownloadStatus.Completed ? "100%" : Item.TotalBytes > 0 ? $"{Item.Percent:0.#}%" : (Item.Downloaded > 0 ? Fmt.Size(Item.Downloaded) : "");
     public string Speed => Item.Status == DownloadStatus.Downloading ? Fmt.Speed(Item.Speed) : "";
     public string Eta => Item.Status == DownloadStatus.Downloading && Item.TotalBytes > 0 ? Fmt.Eta(Item.TotalBytes - Item.Downloaded, Item.Speed) : "";
-    public string Status => Item.Status == DownloadStatus.Error ? L.T("خطأ — ") + Item.Error : Item.StatusText;
+    public string Status => Item.Status == DownloadStatus.Error ? L.T("خطأ — ") + Item.Error
+        : Item.Status == DownloadStatus.Completed ? Item.StatusText
+        : Item.TotalBytes > 0 && Item.Downloaded > 0 ? $"{Item.StatusText} — {Item.Percent:0.#}%" : Item.StatusText;
+    public string Category => L.T(Item.Category);
+    public string Description => Item.Description ?? Item.Quality ?? "";
     public Brush StatusBrush => Item.Status switch
     {
         DownloadStatus.Completed => Theme.Green,
@@ -119,7 +123,7 @@ public sealed class MainWindow : Window
         DockPanel.SetDock(status, Dock.Bottom);
         root.Children.Add(status);
 
-        var sidebar = new Border { Width = 210, Background = Theme.Panel, BorderBrush = Theme.Line, BorderThickness = new Thickness(0, 0, 1, 0), Child = new ScrollViewer { Content = _nav, VerticalScrollBarVisibility = ScrollBarVisibility.Auto } };
+        var sidebar = new Border { Width = 180, Background = Theme.Panel, BorderBrush = Theme.Line, BorderThickness = new Thickness(0, 0, 1, 0), Child = new ScrollViewer { Content = _nav, VerticalScrollBarVisibility = ScrollBarVisibility.Auto } };
         DockPanel.SetDock(sidebar, Dock.Left);
         root.Children.Add(sidebar);
         BuildNav();
@@ -154,78 +158,89 @@ public sealed class MainWindow : Window
 
     private UIElement Toolbar()
     {
-        var bar = new DockPanel { Background = Theme.Panel, LastChildFill = false };
-        var brand = new StackPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(14, 8, 18, 8), VerticalAlignment = VerticalAlignment.Center };
-        brand.Children.Add(Ui.Logo(38));
-        var names = new StackPanel { Margin = new Thickness(10, 0, 0, 0), VerticalAlignment = VerticalAlignment.Center };
-        var title = new StackPanel { Orientation = Orientation.Horizontal, FlowDirection = FlowDirection.LeftToRight, HorizontalAlignment = HorizontalAlignment.Left };
-        title.Children.Add(Ui.Text("IBDM", 18, Theme.Ink, bold: true));
-        var pro = Ui.Text(" Pro", 18, Theme.Gold, bold: true);
-        title.Children.Add(pro);
-        names.Children.Add(title);
-        names.Children.Add(Ui.Text(L.T("الإصدار ") + Program.Version, 11, Theme.Muted));
-        brand.Children.Add(names);
-        DockPanel.SetDock(brand, Dock.Left);
-        bar.Children.Add(brand);
-
-        var tools = new StackPanel { Orientation = Orientation.Horizontal, VerticalAlignment = VerticalAlignment.Center };
-        tools.Children.Add(Ui.Tool(L.T("تحميل جديد"), "", AddUrl));
-        tools.Children.Add(QueueTools());
-        var menus = new Menu { VerticalAlignment = VerticalAlignment.Center, Background = Brushes.Transparent, FlowDirection = L.Rtl ? FlowDirection.RightToLeft : FlowDirection.LeftToRight };
         MenuItem Command(string title, Action action)
         {
-            var item = new MenuItem { Header = L.T(title) };
+            var item = new MenuItem { Header = L.T(title), Padding = new Thickness(9, 4, 9, 4) };
             item.Click += (_, _) => action();
             return item;
         }
-        var fileMenu = new MenuItem { Header = L.T("ملف") };
-        fileMenu.Items.Add(Command("تحميل جديد", AddUrl));
-        fileMenu.Items.Add(new Separator());
-        fileMenu.Items.Add(Command("خروج", Close));
-        var downloadMenu = new MenuItem { Header = L.T("التحميل") };
-        downloadMenu.Items.Add(Command("استئناف", () => ForSelected(i => _manager.Resume(i))));
-        downloadMenu.Items.Add(Command("إيقاف", () => ForSelected(i => _manager.Pause(i))));
-        downloadMenu.Items.Add(Command("إيقاف الكل", _manager.PauseAll));
-        downloadMenu.Items.Add(new Separator());
-        downloadMenu.Items.Add(Command("فتح الملف", OpenSelectedFile));
-        downloadMenu.Items.Add(Command("فتح المجلد", OpenSelectedFolder));
-        downloadMenu.Items.Add(new Separator());
-        downloadMenu.Items.Add(Command("حذف", Delete));
-        downloadMenu.Items.Add(Command("حذف المكتملة", DeleteCompleted));
-        var viewMenu = new MenuItem { Header = L.T("عرض") };
-        viewMenu.Items.Add(Command("كل التحميلات", () => SetFilter("all")));
-        viewMenu.Items.Add(Command("قيد التحميل", () => SetFilter("active")));
-        viewMenu.Items.Add(Command("غير مكتملة", () => SetFilter("unfinished")));
-        viewMenu.Items.Add(Command("مكتملة", () => SetFilter("done")));
-        var settingsMenu = new MenuItem { Header = L.T("إعدادات") };
-        settingsMenu.Items.Add(Command("الإعدادات", OpenSettings));
-        settingsMenu.Items.Add(Command("الإضافة", () => ExtensionGuide.Show(this)));
-        settingsMenu.Items.Add(Command("التحديثات", () => Updater.ShowWindow(this)));
-        settingsMenu.Items.Add(Command("حول", () => new AboutWindow { Owner = this }.ShowDialog()));
-        menus.Items.Add(fileMenu);
-        menus.Items.Add(downloadMenu);
-        menus.Items.Add(viewMenu);
-        menus.Items.Add(settingsMenu);
-        tools.Children.Add(menus);
-        DockPanel.SetDock(tools, Dock.Left);
-        bar.Children.Add(tools);
 
-        _search.Width = 200;
-        _search.Margin = new Thickness(10, 0, 14, 0);
-        _search.VerticalAlignment = VerticalAlignment.Center;
-        _search.ToolTip = L.T("بحث");
-        _search.TextChanged += (_, _) => _view.Refresh();
-        var searchBox = new Grid { VerticalAlignment = VerticalAlignment.Center };
+        var menus = new Menu { Height = 29, Background = Theme.Panel, FlowDirection = FlowDirection.LeftToRight, Padding = new Thickness(4, 0, 4, 0) };
+        var tasks = new MenuItem { Header = L.T("المهام") };
+        tasks.Items.Add(Command("تحميل جديد", AddUrl));
+        tasks.Items.Add(Command("قائمة انتظار جديدة…", CreateQueue));
+        tasks.Items.Add(new Separator());
+        tasks.Items.Add(Command("خروج", Close));
+        var file = new MenuItem { Header = L.T("ملف") };
+        file.Items.Add(Command("فتح المجلد", OpenSelectedFolder));
+        file.Items.Add(Command("الإعدادات", OpenSettings));
+        var downloads = new MenuItem { Header = L.T("التحميل") };
+        downloads.Items.Add(Command("استئناف", () => ForSelected(i => _manager.Resume(i))));
+        downloads.Items.Add(Command("إيقاف", () => ForSelected(i => _manager.Pause(i))));
+        downloads.Items.Add(Command("إيقاف الكل", _manager.PauseAll));
+        downloads.Items.Add(new Separator());
+        downloads.Items.Add(Command("حذف", Delete));
+        downloads.Items.Add(Command("حذف المكتملة", DeleteCompleted));
+        downloads.Items.Add(Command("نقل إلى قائمة", () =>
+        {
+            var menu = new ContextMenu();
+            foreach (var q in Settings.Current.Queues)
+            {
+                var target = new MenuItem { Header = q.Name };
+                target.Click += (_, _) => { _manager.MoveToQueue(Selected(), q.Name); Sync(); };
+                menu.Items.Add(target);
+            }
+            menu.PlacementTarget = this;
+            menu.IsOpen = true;
+        }));
+        var view = new MenuItem { Header = L.T("عرض") };
+        view.Items.Add(Command("كل التحميلات", () => SetFilter("all")));
+        view.Items.Add(Command("قيد التحميل", () => SetFilter("active")));
+        view.Items.Add(Command("غير مكتملة", () => SetFilter("unfinished")));
+        view.Items.Add(Command("مكتملة", () => SetFilter("done")));
+        view.Items.Add(new Separator());
+        foreach (var c in Settings.Current.Categories) view.Items.Add(Command(c.Name, () => SetFilter("cat:" + c.Name)));
+        foreach (var q in Settings.Current.Queues) view.Items.Add(Command(q.Name, () => SetFilter("queue:" + q.Name)));
+        var help = new MenuItem { Header = L.T("تعليمات") };
+        help.Items.Add(Command("الإضافة", () => ExtensionGuide.Show(this)));
+        help.Items.Add(Command("التحديثات", () => Updater.ShowWindow(this)));
+        help.Items.Add(Command("حول", () => new AboutWindow { Owner = this }.ShowDialog()));
+        var registration = new MenuItem { Header = L.T("التسجيل") };
+        registration.Click += (_, _) => Ui.Open(Updater.Page);
+        menus.Items.Add(tasks);
+        menus.Items.Add(file);
+        menus.Items.Add(downloads);
+        menus.Items.Add(view);
+        menus.Items.Add(help);
+        menus.Items.Add(registration);
+
+        var tools = new DockPanel { Height = 72, LastChildFill = false, Background = Theme.Panel, FlowDirection = FlowDirection.LeftToRight };
+        var buttons = new StackPanel { Orientation = Orientation.Horizontal, VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(4, 0, 8, 0), FlowDirection = FlowDirection.LeftToRight };
+        buttons.Children.Add(Ui.Tool(L.T("إضافة رابط"), "", AddUrl));
+        buttons.Children.Add(Ui.Tool(L.T("استئناف"), "", () => ForSelected(i => _manager.Resume(i)), Theme.Green));
+        buttons.Children.Add(Ui.Tool(L.T("إيقاف"), "", () => ForSelected(i => _manager.Pause(i)), Theme.Ink));
+        buttons.Children.Add(Ui.Tool(L.T("إيقاف الكل"), "", _manager.PauseAll, Theme.Ink));
+        buttons.Children.Add(Ui.Tool(L.T("حذف"), "", Delete, Theme.Red));
+        buttons.Children.Add(Ui.Tool(L.T("حذف المكتملة"), "", DeleteCompleted, Theme.Red));
+        buttons.Children.Add(Separator());
+        buttons.Children.Add(Ui.Tool(L.T("خيارات"), "", OpenSettings, Theme.Ink));
+        buttons.Children.Add(QueueTools());
+        var searchBox = new StackPanel { Orientation = Orientation.Horizontal, VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(10, 0, 12, 0) };
         searchBox.Children.Add(_search);
-        var hint = Ui.Text(L.T("بحث في التحميلات…"), 12, Theme.Muted);
-        hint.Margin = new Thickness(20, 0, 0, 0);
-        hint.IsHitTestVisible = false;
-        _search.TextChanged += (_, _) => hint.Visibility = _search.Text.Length == 0 ? Visibility.Visible : Visibility.Collapsed;
-        searchBox.Children.Add(hint);
+        _search.Width = 190;
+        _search.ToolTip = L.T("بحث");
+        _search.FlowDirection = FlowDirection.RightToLeft;
+        _search.TextChanged += (_, _) => _view.Refresh();
         DockPanel.SetDock(searchBox, Dock.Right);
-        bar.Children.Add(searchBox);
+        tools.Children.Add(searchBox);
+        DockPanel.SetDock(buttons, Dock.Left);
+        tools.Children.Add(buttons);
 
-        return new Border { Child = bar, BorderBrush = Theme.Line, BorderThickness = new Thickness(0, 0, 0, 1) };
+        var layout = new StackPanel { Background = Theme.Panel };
+        layout.Children.Add(menus);
+        layout.Children.Add(new Border { Height = 1, Background = Theme.Line });
+        layout.Children.Add(tools);
+        return new Border { Child = layout, BorderBrush = Theme.Line, BorderThickness = new Thickness(0, 0, 0, 1) };
     }
 
     private UIElement QueueTools()
@@ -264,21 +279,13 @@ public sealed class MainWindow : Window
         menu.Items.Add(create);
     }
 
-    private static UIElement Separator() => new Border { Width = 1, Background = Theme.Line, Margin = new Thickness(6, 10, 6, 10) };
+    private static UIElement Separator() => new Border { Width = 1, Height = 44, Background = Theme.Line, Margin = new Thickness(6, 10, 6, 10), VerticalAlignment = VerticalAlignment.Center };
 
     private void SetFilter(string filter)
     {
         _filter = filter;
-        var label = filter switch
-        {
-            "all" => L.T("كل التحميلات"),
-            "active" => L.T("قيد التحميل"),
-            "unfinished" => L.T("غير مكتملة"),
-            "done" => L.T("مكتملة"),
-            _ => "",
-        };
         foreach (var button in _nav.Children.OfType<RadioButton>())
-            if (button.Content is DockPanel row && row.Children.OfType<TextBlock>().LastOrDefault()?.Text == label) { button.IsChecked = true; break; }
+            if (button.Tag?.ToString() == filter) { button.IsChecked = true; break; }
         _view.Refresh();
         UpdateEmpty();
     }
@@ -313,10 +320,7 @@ public sealed class MainWindow : Window
         _nav.Children.Clear();
         _counts.Clear();
         _nav.Children.Add(NavItem("all", L.T("كل التحميلات"), "", Theme.Gold));
-        _nav.Children.Add(NavItem("active", L.T("قيد التحميل"), "", Theme.Gold));
-        _nav.Children.Add(NavItem("unfinished", L.T("غير مكتملة"), "", Theme.Muted));
-        _nav.Children.Add(NavItem("done", L.T("مكتملة"), "", Theme.Green));
-        var h = Ui.Text(L.T("الأنواع"), 11.5, Theme.Muted);
+        var h = Ui.Text(L.T("الفئات"), 11.5, Theme.Muted);
         h.Margin = new Thickness(10, 14, 0, 6);
         _nav.Children.Add(h);
         foreach (var c in Settings.Current.Categories) _nav.Children.Add(NavItem("cat:" + c.Name, L.T(c.Name), c.Icon, Theme.Br(c.Color)));
@@ -359,7 +363,7 @@ public sealed class MainWindow : Window
         row.Children.Add(count);
         row.Children.Add(Ui.Text(text, 13));
         _counts[key] = count;
-        var rb = new RadioButton { Style = Theme.Nav, Content = row, GroupName = "nav", IsChecked = key == _filter, HorizontalContentAlignment = HorizontalAlignment.Stretch };
+        var rb = new RadioButton { Style = Theme.Nav, Content = row, Tag = key, GroupName = "nav", IsChecked = key == _filter, HorizontalContentAlignment = HorizontalAlignment.Stretch };
         rb.Checked += (_, _) => { _filter = key; _view.Refresh(); UpdateEmpty(); };
         return rb;
     }
@@ -368,6 +372,7 @@ public sealed class MainWindow : Window
     {
         _list.Background = Theme.Bg;
         _list.Foreground = Theme.Ink;
+        _list.FlowDirection = FlowDirection.LeftToRight;
         _list.BorderThickness = new Thickness(0);
         _list.ItemContainerStyle = Theme.Row;
         _list.ItemsSource = _view;
@@ -390,36 +395,14 @@ public sealed class MainWindow : Window
         nameText.SetBinding(FrameworkElement.FlowDirectionProperty, new Binding(nameof(Row.NameFlow)));
         nameText.SetValue(FrameworkElement.HorizontalAlignmentProperty, HorizontalAlignment.Left);
         name.AppendChild(nameText);
-        grid.Columns.Add(Column(L.T("الاسم"), 270, name, "name"));
-
-        grid.Columns.Add(Column(L.T("الحجم"), 85, TextCell(nameof(Row.Size), ltr: true), "size"));
-
-        // progress bar with the percentage under it
-        var prog = new FrameworkElementFactory(typeof(StackPanel));
-        var bar = new FrameworkElementFactory(typeof(ProgressBar));
-        bar.SetValue(FrameworkElement.StyleProperty, Theme.Progress);
-        bar.SetValue(ProgressBar.MaximumProperty, 100.0);
-        bar.SetValue(FrameworkElement.MarginProperty, new Thickness(0, 2, 10, 3));
-        bar.SetBinding(ProgressBar.ValueProperty, new Binding(nameof(Row.Percent)) { Mode = BindingMode.OneWay });
-        bar.SetBinding(Control.ForegroundProperty, new Binding(nameof(Row.BarBrush)));
-        bar.SetBinding(ProgressBar.IsIndeterminateProperty, new Binding(nameof(Row.Indeterminate)) { Mode = BindingMode.OneWay });
-        prog.AppendChild(bar);
-        prog.AppendChild(TextCell(nameof(Row.PercentText), null, 11.5, ltr: true));
-        grid.Columns.Add(Column(L.T("التقدم"), 140, prog, "progress"));
-
-        grid.Columns.Add(Column(L.T("السرعة"), 90, TextCell(nameof(Row.Speed), Theme.Gold, ltr: true), "speed"));
-        grid.Columns.Add(Column(L.T("المتبقي"), 70, TextCell(nameof(Row.Eta), ltr: true), "eta"));
-        grid.Columns.Add(Column(L.T("الحالة"), 130, TextCell(nameof(Row.Status), null, 12.5, nameof(Row.StatusBrush)), "status"));
-
-        // buttons on each row: pause / resume, open folder (finished), delete
-        var actions = new FrameworkElementFactory(typeof(StackPanel));
-        actions.SetValue(StackPanel.OrientationProperty, Orientation.Horizontal);
-        actions.AppendChild(RowButton("\uE769", L.T("إيقاف"), nameof(Row.PauseVisible), Theme.Ink, r => _manager.Pause(r.Item)));
-        actions.AppendChild(RowButton("\uE768", L.T("استئناف"), nameof(Row.ResumeVisible), Theme.Green, r => _manager.Resume(r.Item)));
-        actions.AppendChild(RowButton("\uE838", L.T("فتح المجلد"), nameof(Row.FolderVisible), Theme.Ink, r => Ui.ShowInFolder(r.Item.FullPath)));
-        actions.AppendChild(RowButton("\uE711", L.T("حذف"), null, Theme.Red, r => { _list.SelectedItem = r; Delete(); }));
-        grid.Columns.Add(new GridViewColumn { Header = new GridViewColumnHeader { Content = "", IsHitTestVisible = false }, Width = 110, CellTemplate = new DataTemplate { VisualTree = actions } });
-        grid.Columns.Add(Column(L.T("التاريخ"), 125, TextCell(nameof(Row.Date), Theme.Muted, 12, ltr: true), "date"));
+        grid.Columns.Add(Column(L.T("اسم الملف"), 300, name, "name"));
+        grid.Columns.Add(Column(L.T("الفئة"), 78, TextCell(nameof(Row.Category), Theme.Muted, 12), "category"));
+        grid.Columns.Add(Column(L.T("الحجم"), 88, TextCell(nameof(Row.Size), ltr: true), "size"));
+        grid.Columns.Add(Column(L.T("الحالة"), 110, TextCell(nameof(Row.Status), null, 12, nameof(Row.StatusBrush)), "status"));
+        grid.Columns.Add(Column(L.T("الوقت المتبقي"), 110, TextCell(nameof(Row.Eta), ltr: true), "eta"));
+        grid.Columns.Add(Column(L.T("معدل النقل"), 94, TextCell(nameof(Row.Speed), Theme.Gold, ltr: true), "speed"));
+        grid.Columns.Add(Column(L.T("آخر تاريخ"), 120, TextCell(nameof(Row.Date), Theme.Muted, 12, ltr: true), "date"));
+        grid.Columns.Add(Column(L.T("الوصف"), 155, TextCell(nameof(Row.Description), Theme.Muted, 12), "description"));
         _list.View = grid;
 
         _list.MouseDoubleClick += (_, e) =>
@@ -607,7 +590,9 @@ public sealed class MainWindow : Window
         var prop = _sortBy switch
         {
             "name" => "Item.FileName",
+            "category" => "Item.Category",
             "size" => "Item.TotalBytes",
+            "description" => "Item.Description",
             "progress" => "Percent",
             "speed" => "Item.Speed",
             "status" => "Item.Status",

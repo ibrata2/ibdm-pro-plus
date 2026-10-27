@@ -59,7 +59,7 @@ public sealed class Settings
     public string Language { get; set; } = "ar";
 
     /// <summary>"glass" (red glass, the default), "auto" = light or dark like Windows, "dark", or "light".</summary>
-    public string Theme { get; set; } = "glass";
+    public string Theme { get; set; } = "light";
     /// <summary>Set once the red glass style has been made the default for an existing install.</summary>
     public bool GlassDefaultApplied { get; set; } = true;
 
@@ -190,8 +190,8 @@ public sealed class Settings
                     if (s.Categories.Count == 0) s.Categories = DefaultCategories();
                     if (!s.GlassDefaultApplied)
                     {
-                        // Older settings files: switch once to the new default red glass style.
-                        s.Theme = "glass";
+                        // Older settings files: migrate once to the classic light download-manager layout.
+                        s.Theme = "light";
                         s.GlassDefaultApplied = true;
                         try { Json.SaveAtomic(FilePath, s); } catch (Exception) { }
                     }
