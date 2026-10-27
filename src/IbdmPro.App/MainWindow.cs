@@ -206,7 +206,9 @@ public sealed class MainWindow : Window
         help.Items.Add(Command("التحديثات", () => Updater.ShowWindow(this)));
         help.Items.Add(Command("حول", () => new AboutWindow { Owner = this }.ShowDialog()));
         var registration = new MenuItem { Header = L.T("التسجيل") };
-        registration.Click += (_, _) => Ui.Open(Updater.Page);
+        registration.Items.Add(new MenuItem { Header = L.T("البرنامج مجاني وكامل"), IsEnabled = false });
+        registration.Items.Add(new Separator());
+        registration.Items.Add(Command("للمزيد من البرامج على تيليغرام", () => Ui.Open("https://t.me/ibraprogram")));
         menus.Items.Add(tasks);
         menus.Items.Add(file);
         menus.Items.Add(downloads);
