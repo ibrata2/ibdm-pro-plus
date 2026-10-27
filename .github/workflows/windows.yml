@@ -1,0 +1,269 @@
+name: Build IBDM Pro
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  test:
+    name: Engine tests (real downloads)
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-dotnet@v5
+        with:
+          dotnet-version: 10.0.x
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+      - name: Tools
+        timeout-minutes: 6
+        run: |
+          # A static FFmpeg build (apt mirrors are sometimes very slow on the runners)
+          curl -sSL https://github.com/BtbN/FFmpeg-Builds/releases/download/latest/ffmpeg-master-latest-linux64-gpl.tar.xz | tar -xJ -C /tmp
+          echo "$(ls -d /tmp/ffmpeg-master-latest-linux64-gpl)/bin" >> $GITHUB_PATH
+          pip install -q yt-dlp
+      - name: Every text has its English translation
+        run: |
+          missing=$(python3 -I tools/i18n_missing.py "$PWD")
+          if [ -n "$missing" ]; then echo "Missing English for:"; echo "$missing"; exit 1; fi
+      - name: Run tests
+        run: tests/run.sh
+
+  build:
+    name: Windows app + installer
+    needs: test
+    runs-on: windows-latest
+    defaults:
+      run:
+        shell: pwsh
+    env:
+      DOTNET_CLI_TELEMETRY_OPTOUT: 1
+      DOTNET_NOLOGO: 1
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-dotnet@v5
+        with:
+          dotnet-version: 10.0.x
+
+      - name: Version
+        id: v
+        run: |
+          $version = "1.0.${{ github.run_number }}"
+          "version=$version" >> $env:GITHUB_OUTPUT
+          Write-Host "IBDM Pro $version"
+
+      - name: Publish the app
+        run: |
+          $out = "build/publish"
+          dotnet publish src/IbdmPro.App/IbdmPro.App.csproj -c Release -r win-x64 --self-contained -p:Version=${{ steps.v.outputs.version }} -p:DebugType=none -o $out
+          if ($LASTEXITCODE) { exit $LASTEXITCODE }
+          if (!(Test-Path "$out/IBDMPro.exe")) { throw "IBDMPro.exe was not built" }
+
+      - name: Browser extension (same version as the app)
+        run: |
+          $ext = "build/publish/extension"
+          Copy-Item extension $ext -Recurse -Force
+          $m = Get-Content "$ext/manifest.json" -Raw -Encoding utf8
+          $m = $m -replace '"version":\s*"[^"]*"', '"version": "${{ steps.v.outputs.version }}"'
+          [IO.File]::WriteAllText((Resolve-Path "$ext/manifest.json"), $m, (New-Object Text.UTF8Encoding $false))
+          New-Item -ItemType Directory -Force build/installer | Out-Null
+          Compress-Archive -Path "$ext/*" -DestinationPath build/installer/IBDM-Pro-Extension.zip -Force
+          # Firefox copy: background scripts instead of a service worker, and a Firefox add-on id.
+          $ff = "build/publish/extension-firefox"
+          Copy-Item $ext $ff -Recurse -Force
+          $j = Get-Content "$ff/manifest.json" -Raw -Encoding utf8 | ConvertFrom-Json
+          $j.background = [pscustomobject]@{ scripts = @("i18n.js", "background.js") }
+          $j | Add-Member -NotePropertyName browser_specific_settings -NotePropertyValue ([pscustomobject]@{ gecko = [pscustomobject]@{ id = "ibdm-pro@ibraprogram"; strict_min_version = "128.0" } })
+          [IO.File]::WriteAllText((Resolve-Path "$ff/manifest.json"), ($j | ConvertTo-Json -Depth 10), (New-Object Text.UTF8Encoding $false))
+          Get-Content "$ff/manifest.json"
+
+      - name: Bundle yt-dlp and FFmpeg
+        run: |
+          $tools = "build/publish/tools"
+          New-Item -ItemType Directory -Force $tools, dl | Out-Null
+          Invoke-WebRequest "https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp.exe" -OutFile "$tools/yt-dlp.exe"
+          Invoke-WebRequest "https://github.com/BtbN/FFmpeg-Builds/releases/download/latest/ffmpeg-master-latest-win64-gpl.zip" -OutFile dl/ffmpeg.zip
+          Expand-Archive dl/ffmpeg.zip dl/ffmpeg
+          Get-ChildItem dl/ffmpeg -Recurse -Include ffmpeg.exe, ffprobe.exe | Copy-Item -Destination $tools
+          if (!(Test-Path "$tools/ffmpeg.exe")) { throw "ffmpeg.exe missing" }
+          # Deno: the JavaScript runtime yt-dlp needs for YouTube formats.
+          Invoke-WebRequest "https://github.com/denoland/deno/releases/latest/download/deno-x86_64-pc-windows-msvc.zip" -OutFile dl/deno.zip
+          Expand-Archive dl/deno.zip dl/deno
+          Copy-Item dl/deno/deno.exe $tools
+          if (!(Test-Path "$tools/deno.exe")) { throw "deno.exe missing" }
+          & "$tools/yt-dlp.exe" --version
+          & "$tools/deno.exe" --version
+
+      - name: Real YouTube check (formats listed with Deno)
+        continue-on-error: true
+        run: |
+          $tools = (Resolve-Path build/publish/tools).Path
+          $json = & "$tools/yt-dlp.exe" -J --no-playlist --no-warnings --ignore-no-formats-error --js-runtimes "deno:$tools\deno.exe" "https://www.youtube.com/watch?v=jNQXAC9IVRw" 2>&1
+          try {
+            $d = ($json | Where-Object { $_ -like '{*' }) | ConvertFrom-Json
+            $heights = $d.formats | Where-Object { $_.height } | ForEach-Object { $_.height } | Sort-Object -Unique
+            Write-Host "title: $($d.title) — video heights: $($heights -join ', ') — formats: $($d.formats.Count)"
+          } catch { Write-Host "YouTube answer: $json" }
+
+      - name: Check the app starts and talks to the extension
+        run: |
+          $p = Start-Process build/publish/IBDMPro.exe -ArgumentList "--background" -PassThru
+          $ok = $false
+          for ($i = 0; $i -lt 30 -and -not $ok; $i++) {
+            Start-Sleep 1
+            try { $r = Invoke-RestMethod http://127.0.0.1:39401/ping -TimeoutSec 2; $ok = $r.app -eq "IBDM Pro"; $r | ConvertTo-Json -Compress } catch { }
+          }
+          $alive = -not $p.HasExited
+          Stop-Process -Id $p.Id -Force -ErrorAction SilentlyContinue
+          if (-not $ok) { Get-Content "$env:APPDATA/IBDM Pro/log.txt" -ErrorAction SilentlyContinue; throw "the app did not answer on 127.0.0.1:39401 (alive: $alive)" }
+          Write-Host "App started and answered the extension ping."
+
+      - name: Check the "search for update" reads GitHub
+        run: |
+          Start-Process build/publish/IBDMPro.exe -ArgumentList "--check-update", "update.txt" -Wait
+          $t = Get-Content update.txt
+          Write-Host $t
+          if ($t -notmatch "^current=") { throw "update check failed: $t" }
+
+      - name: Automatic extension install (real Chrome, Edge and Brave)
+        continue-on-error: true
+        timeout-minutes: 12
+        run: |
+          New-Item -ItemType Directory -Force build/snapshots/extension-install | Out-Null
+          Add-Type -AssemblyName System.Windows.Forms, System.Drawing
+          function Shot($file) {
+            $b = [System.Windows.Forms.Screen]::PrimaryScreen.Bounds
+            $bmp = New-Object System.Drawing.Bitmap $b.Width, $b.Height
+            $g = [System.Drawing.Graphics]::FromImage($bmp); $g.CopyFromScreen($b.Location, [System.Drawing.Point]::Empty, $b.Size)
+            $bmp.Save($file); $g.Dispose(); $bmp.Dispose()
+          }
+          # A fresh CI machine: skip the browsers' one-time welcome/sign-in screens (a normal PC is already past them).
+          foreach ($k in "HKLM:\SOFTWARE\Policies\Google\Chrome", "HKLM:\SOFTWARE\Policies\Microsoft\Edge") { New-Item -Path $k -Force | Out-Null }
+          Set-ItemProperty "HKLM:\SOFTWARE\Policies\Google\Chrome" BrowserSignin 0 -Type DWord
+          Set-ItemProperty "HKLM:\SOFTWARE\Policies\Microsoft\Edge" HideFirstRunExperience 1 -Type DWord
+          Set-ItemProperty "HKLM:\SOFTWARE\Policies\Microsoft\Edge" BrowserSignin 0 -Type DWord
+          choco install brave -y --no-progress | Out-Null
+          $ext = (Resolve-Path build/publish/extension).Path
+          $app = Start-Process build/publish/IBDMPro.exe -ArgumentList "--background" -PassThru
+          Start-Sleep 6
+          foreach ($b in "chrome", "msedge", "brave") {
+            $job = Start-Job { param($exe, $b, $ext, $out) Start-Process $exe -ArgumentList "--install-extension", $b, $out, $ext -Wait } -ArgumentList (Resolve-Path build/publish/IBDMPro.exe).Path, $b, $ext, "$PWD/install-$b.txt"
+            Start-Sleep 12; Shot "build/snapshots/extension-install/$b-during.png"
+            Wait-Job $job -Timeout 120 | Out-Null
+            Shot "build/snapshots/extension-install/$b-after.png"
+            Write-Host "===== $b ====="; Get-Content "install-$b.txt" -ErrorAction SilentlyContinue
+            Get-Process $b -ErrorAction SilentlyContinue | Stop-Process -Force
+            Start-Sleep 2
+          }
+          # Self-update: install an "old" copy (version 1.0.0), then replace its files like an app update does,
+          # and check Chrome picks up the new version by itself.
+          $old = "$env:TEMP\ibdm-ext-old"
+          Remove-Item -Recurse -Force $old -ErrorAction SilentlyContinue
+          Copy-Item $ext $old -Recurse
+          $m = Get-Content "$old/manifest.json" -Raw -Encoding utf8
+          [IO.File]::WriteAllText("$old/manifest.json", ($m -replace '"version":\s*"[^"]*"', '"version": "1.0.0"'), (New-Object Text.UTF8Encoding $false))
+          # -Wait would also wait for Chrome (started by the installer) to close, so wait for the installer only.
+          $p = Start-Process (Resolve-Path build/publish/IBDMPro.exe).Path -ArgumentList "--install-extension", "chrome", "$PWD/install-old.txt", $old -PassThru
+          $p.WaitForExit(150000) | Out-Null
+          Get-Content install-old.txt
+          Shot "build/snapshots/extension-install/selfupdate-1-old.png"
+          Copy-Item "$ext/*" $old -Recurse -Force
+          Start-Sleep 100
+          Shot "build/snapshots/extension-install/selfupdate-2-after.png"
+          Get-Process chrome -ErrorAction SilentlyContinue | Stop-Process -Force
+          Invoke-RestMethod http://127.0.0.1:39401/status | ConvertTo-Json -Compress
+          Stop-Process -Id $app.Id -Force -ErrorAction SilentlyContinue
+
+      - name: The real window on screen (title-bar buttons on the right in both languages)
+        continue-on-error: true
+        run: |
+          New-Item -ItemType Directory -Force build/snapshots/screen | Out-Null
+          Add-Type -AssemblyName System.Windows.Forms, System.Drawing
+          function Shot($file) {
+            $b = [System.Windows.Forms.Screen]::PrimaryScreen.Bounds
+            $bmp = New-Object System.Drawing.Bitmap $b.Width, $b.Height
+            $g = [System.Drawing.Graphics]::FromImage($bmp); $g.CopyFromScreen($b.Location, [System.Drawing.Point]::Empty, $b.Size)
+            $bmp.Save($file); $g.Dispose(); $bmp.Dispose()
+          }
+          $cfg = "$env:APPDATA\IBDM Pro"
+          New-Item -ItemType Directory -Force $cfg | Out-Null
+          foreach ($lang in "ar", "en") {
+            $s = if (Test-Path "$cfg\settings.json") { Get-Content "$cfg\settings.json" -Raw | ConvertFrom-Json } else { [pscustomobject]@{} }
+            $s | Add-Member -NotePropertyName Language -NotePropertyValue $lang -Force
+            $s | Add-Member -NotePropertyName HasSeenWelcome -NotePropertyValue $true -Force
+            $s | ConvertTo-Json -Depth 10 | Set-Content "$cfg\settings.json" -Encoding utf8
+            $p = Start-Process build/publish/IBDMPro.exe -PassThru
+            Start-Sleep 8
+            Shot "build/snapshots/screen/window-$lang.png"
+            Stop-Process -Id $p.Id -Force -ErrorAction SilentlyContinue
+            Start-Sleep 2
+          }
+
+      - name: Snapshots of every window
+        continue-on-error: true
+        run: |
+          New-Item -ItemType Directory -Force build/snapshots/dark, build/snapshots/light, build/snapshots/glass | Out-Null
+          Start-Process build/publish/IBDMPro.exe -ArgumentList "--snapshot", "build/snapshots/glass", "--theme", "glass" -Wait
+          New-Item -ItemType Directory -Force build/snapshots/english | Out-Null
+          Start-Process build/publish/IBDMPro.exe -ArgumentList "--snapshot", "build/snapshots/english", "--theme", "glass", "--lang", "en" -Wait
+          Start-Process build/publish/IBDMPro.exe -ArgumentList "--snapshot", "build/snapshots/dark", "--theme", "dark" -Wait
+          Start-Process build/publish/IBDMPro.exe -ArgumentList "--snapshot", "build/snapshots/light", "--theme", "light" -Wait
+          Get-ChildItem build/snapshots -Recurse | Format-Table FullName, Length
+          Get-ChildItem build/snapshots -Recurse -Filter *.txt | ForEach-Object { Get-Content $_ }
+
+      - name: Keep the snapshots on the ci-snapshots branch (to review the look of each build)
+        continue-on-error: true
+        run: |
+          $dir = "build/snapshots"
+          Set-Location $dir
+          git init -q -b ci-snapshots
+          git config user.name "github-actions"
+          git config user.email "github-actions@users.noreply.github.com"
+          git add -A
+          git commit -q -m "Snapshots of ${{ steps.v.outputs.version }}"
+          git push -f -q "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}.git" ci-snapshots
+
+      - name: Make sure Inno Setup has Arabic
+        run: |
+          $inno = "${env:ProgramFiles(x86)}\Inno Setup 6"
+          if (!(Test-Path "$inno\ISCC.exe")) { choco install innosetup -y --no-progress }
+          if (!(Test-Path "$inno\Languages\Arabic.isl")) {
+            Invoke-WebRequest "https://raw.githubusercontent.com/jrsoftware/issrc/main/Files/Languages/Unofficial/Arabic.isl" -OutFile "$inno\Languages\Arabic.isl"
+          }
+
+      - name: Build the installer
+        working-directory: installer
+        run: |
+          & "${env:ProgramFiles(x86)}\Inno Setup 6\ISCC.exe" /Q /DAppVersion=${{ steps.v.outputs.version }} "/DSource=..\build\publish" IbdmPro.iss
+          if ($LASTEXITCODE) { exit $LASTEXITCODE }
+          Get-ChildItem ..\build\installer | Format-Table Name, Length
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: IBDM-Pro-Setup
+          path: build/installer/*
+
+      - name: Publish a release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v${{ steps.v.outputs.version }}
+          name: IBDM Pro ${{ steps.v.outputs.version }}
+          make_latest: true
+          files: |
+            build/installer/IBDM-Pro-Setup.exe
+            build/installer/IBDM-Pro-Extension.zip
+          body: |
+            ## IBDM Pro ${{ steps.v.outputs.version }}
+            مدير تحميل — برمجة و تطوير **ابراهيم الخزرجي**
+
+            **التثبيت:** حمّل **IBDM-Pro-Setup.exe** وشغّله. إذا طلع تحذير Windows: More info ← Run anyway.
+
+            **إضافة المتصفح:** موجودة داخل البرنامج (زر «الإضافة» بالأعلى يشرح الخطوات)، أو حمّل **IBDM-Pro-Extension.zip** وفكّه ثم من `chrome://extensions` فعّل Developer mode ← Load unpacked.
+            بعد كل تحديث اضغط ⟳ على بطاقة الإضافة.

@@ -1,0 +1,31 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!-- The Windows app (WPF, Arabic, right-to-left). WinForms is only used for the tray icon. -->
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net10.0-windows10.0.19041.0</TargetFramework>
+    <SupportedOSPlatformVersion>10.0.17763.0</SupportedOSPlatformVersion>
+    <EnableWindowsTargeting>true</EnableWindowsTargeting>
+    <UseWPF>true</UseWPF>
+    <UseWindowsForms>true</UseWindowsForms>
+    <AssemblyName>IBDMPro</AssemblyName>
+    <RootNamespace>IbdmPro.App</RootNamespace>
+    <ApplicationIcon>..\..\assets\ibdm.ico</ApplicationIcon>
+    <ApplicationManifest>app.manifest</ApplicationManifest>
+    <RuntimeIdentifiers>win-x64</RuntimeIdentifiers>
+  </PropertyGroup>
+  <ItemGroup>
+    <!-- WPF and WinForms share type names (Button, Application…); WinForms types are always written in full. -->
+    <Using Remove="System.Windows.Forms" />
+    <Using Remove="System.Drawing" />
+    <Using Include="System.IO" />
+    <Using Include="System.Net.Http" />
+    <Using Include="IbdmPro.Core" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\IbdmPro.Core\IbdmPro.Core.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <Resource Include="..\..\assets\ibdm.ico" Link="Assets\ibdm.ico" />
+    <Resource Include="..\..\assets\ibdm-256.png" Link="Assets\ibdm-256.png" />
+  </ItemGroup>
+</Project>

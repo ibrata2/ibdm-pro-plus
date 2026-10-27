@@ -1,0 +1,7 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!-- The download engine: no UI, no Windows-only APIs at compile time. -->
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <RootNamespace>IbdmPro.Core</RootNamespace>
+  </PropertyGroup>
+</Project>

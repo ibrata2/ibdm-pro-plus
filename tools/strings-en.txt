@@ -1,0 +1,361 @@
+Extension folder not found: 
+Opening {0} on the extensions page…
+Typing the extensions page address…
+Couldn't find the extensions page or the "Developer mode" switch in the browser.
+Turning on "Developer mode"…
+Pressing "Load unpacked"…
+Couldn't find the "Load unpacked" button.
+Choosing the extension folder…
+The folder picker did not appear.
+Waiting for the extension to start and connect to the app…
+IBDM Pro extension installed in {0} and connected to the app ✓
+The extension was loaded in {0}. If the IBDM Pro icon doesn't appear, restart the browser.
+✓ Done
+Done (connection not confirmed)
+Cancelled
+Couldn't read the folder picker.
+Couldn't find the folder name box in the picker.
+No browser found
+Couldn't find Chrome, Edge or a similar browser on this computer.
+ and 
+Install the extension automatically
+{0} will open and the IBDM Pro extension will be installed automatically.\n\n⚠ Don't click anything or move the mouse over the browser until the installation finishes (about 15 seconds per browser).
+Start installing
+Cancel
+Installing the extension in {0}
+\n\nIf the automatic installation failed, use the manual steps in the "Extension" window.
+Extension installed ✓
+Installation not completed
+IBDM Pro — Installing the extension
+⚠ Don't click anything or move the mouse until the extension is installed
+Press Esc to stop
+Download started
+Checking the link…
+Remember this folder for this file type
+IBDM Pro — File information
+Start download
+Download later
+IBDM Pro — Designed, developed and localized by Ibrahim Al-Khazraji
+Looking for available qualities…
+No downloadable video was found on this page.
+Looking for a video on the page…
+This link can't be downloaded
+Try again
+File information
+File name
+Size
+Type
+Multi-part download
+Supported ✓ ({0} connections)
+Not supported (single connection)
+Link
+Download video
+Duration: 
+Quality
+Video
+Audio only
+Type (sets the folder)
+Save to
+Change…
+Choose where to save
+\nA file with this name exists — it will be saved as "{0}"
+⚠ Not enough space — available:
+Free space on disk:
+Invalid folder
+Error — 
+No downloads here yet.\nClick "Add link" or download any file in your browser and IBDM Pro will catch it.
+New update!
+Version {0} is available — click to install
+Version 
+Add link
+Resume
+Pause
+Pause all
+Delete
+Open file
+Open folder
+Settings
+Extension
+Updates
+About
+Search
+Search downloads…
+Designed, developed and localized by 
+Ibrahim Al-Khazraji
+All downloads
+Downloading
+Unfinished
+Finished
+Types
+Open IBDM Pro folder
+Name
+Progress
+Speed
+Time left
+Status
+Date
+Show progress window
+Download again from the start
+Copy link
+Delete…
+⬇ {0} downloading
+IBDM Pro — {0} downloading {1}
+Extension server stopped
+Browser extension connected
+Browser extension not connected — click to install it
+{0} downloads selected
+IBDM Pro — Download manager
+Quality: {0}   •   
+Connections: {0}   •   
+{0}{1}Location: {2}   •   Link: {3}
+No download selected
+Select a download from the list first.
+File not finished
+Wait until the download finishes.
+File not found
+It may have been moved or deleted:\n{0}
+{0} downloads
+Delete {0} from the list?
+Delete from list only
+Delete the file too
+Delete {0}? The unfinished part will be deleted.
+IBDM Pro is running in the background
+The app stays next to the clock to catch downloads from the browser. To exit: right-click the icon → Exit.
+Something went wrong
+Download complete
+Download failed
+Notice
+Port {0} is used by another program, so downloads from the browser won't arrive. Close the other program, then restart IBDM Pro.
+Windows appearance changed
+dark
+light
+Windows switched to {0} mode. Restart IBDM Pro to apply the new colors? (Downloads continue after restarting)
+Restart now
+Later
+File size
+Downloaded
+Transfer rate
+Time left
+Resume capability
+Connections
+Pause
+Cancel download
+Hide details
+To app
+Close this window and keep the download going in the app window
+Close
+Where each connection started and how far it got
+Information
+Close this window automatically when the download finishes
+Open the file when the download finishes
+Open the folder when the download finishes
+Don't show this window when downloading (turn it back on in Settings)
+Downloading — {0}
+Downloading
+Waiting (starts after another download finishes)
+Unknown
+Yes
+Yes ✓
+No (the server doesn't support it)
+{0} (video parts)
+{0} active of {1}
+Finished
+Receiving data…
+Paused
+Waiting
+Downloading the video in several parts
+✓ Download complete
+Cancel downloading "{0}" and delete the downloaded part?
+Yes, cancel
+No
+Show details
+Open IBDM Pro
+Add link…
+Resume all
+Open downloads folder
+Check for updates…
+Exit
+Couldn't open
+Folder not found
+Couldn't open the folder
+OK
+Couldn't reach the updates page ({0})
+A new version of IBDM Pro is available
+Version {0} — click "Updates" in the app to install it.
+The update download was interrupted, try again
+Updates — IBDM Pro
+Check for the latest version
+Current version:
+Checking for updates…
+Couldn't check for updates
+Check your internet connection and try again.\n
+✓ You're using the latest version
+IBDM Pro {0} is the latest version.
+A new version is available!
+New version:
+The update will be downloaded and installed automatically, then the app restarts.
+\nRunning downloads ({0}) pause and continue from the same point after the update.
+Download and install the update
+Release page
+Downloading version {0}…
+Installing… the app will restart automatically
+Couldn't download the update
+Add a download link
+Paste a file link, or a link to a page with a video (YouTube, Instagram, Facebook, TikTok…)
+Continue
+Install the browser extension
+IBDM Pro browser extension
+So the app catches every download from any site instead of the browser
+⚡ Automatic install
+The app opens the browser, turns on developer mode and installs the extension by itself. Don't click anything while it installs.
+Install in all browsers (
+Couldn't find Chrome, Edge, Brave, Vivaldi or Opera on this computer.
+Or manually:
+Click "Open extension folder" below and keep the window open.
+Click "Open extensions page" (Chrome or Edge).
+Turn on "Developer mode" at the top of the page.
+Click "Load unpacked" and choose the extension folder.
+Pin the IBDM Pro icon to the browser toolbar — done! Try downloading any file.
+Open extension folder
+Open extensions page — Chrome
+Open extensions page — Edge
+After every app update: run the "Automatic install" again or click reload ⟳ on the extension's card in the extensions page.\nWhen the app is closed the browser downloads normally — so keep it starting with Windows.
+Done
+Extension folder not found
+Couldn't open the browser
+Open your browser and paste this address (copied):\n{0}
+About IBDM Pro
+Download manager — catches downloads from the browser, splits files over several connections, and downloads videos in the quality you choose
+Designed, developed and localized by
+Apps channel on Telegram: t.me/ibraprogram
+For programming requests: 07818814000
+App page and updates on GitHub
+Uses yt-dlp and FFmpeg (open-source programs)
+Settings — IBDM Pro
+Start IBDM Pro with Windows (needed to always catch downloads)
+Keep the app running next to the clock when the window is closed
+Notify when a download finishes
+Show the download progress window (details, speed and each connection) when each download starts
+Show the "File information" window (size, type and save location) before each download
+Resume unfinished downloads automatically when the app starts
+Catch downloads from the browser
+Check for updates automatically when the app starts
+General
+Speed & connections
+Browser capture
+Types & folders
+Extension & video engine
+Save
+Main downloads folder (a folder for each type is created inside)
+Choose the main downloads folder
+Appearance
+Automatic — follow Windows
+Dark
+Light
+Red glass (experimental)
+Glass
+Current: {0}. Changing the appearance needs an app restart.
+Each file is split over several connections downloading at the same time — this makes downloads much faster.
+Connections per file
+{0} connections
+Downloads at the same time
+{0} downloads
+Speed limit KB/s (0 = no limit)
+When you download a file from any site, the extension stops the browser's download and sends it to IBDM Pro.
+File types the app catches (extensions separated by spaces)
+Restore the default list
+Don't catch files smaller than (KB) — 0 = catch all
+Sites the app leaves to the browser (one per line)
+Tip: to let the browser download a particular file itself, pause capturing from the extension's icon.
+Each file type is saved in its own folder inside the IBDM Pro folder. You can rename the folder or choose a folder somewhere else.
+Add a new type
+New type
+Folder name inside the IBDM Pro folder, or a full path
+Folder for 
+Any file that doesn't belong to another type
+Extensions separated by spaces
+(any other file)
+Browser extension
+⚠ Extension server stopped (port in use)
+✓ The extension is connected to the app
+The extension hasn't connected yet — install it with the button below
+How to install the extension
+Video download engine (yt-dlp)
+Video sites keep changing how they work. If a video from a site that used to work fails, update the engine here.
+Update the video engine
+Updating…
+Couldn't update: 
+App files
+Open the app's data folder
+Change appearance
+Restart IBDM Pro now to apply the new colors? (Downloads continue after restarting)
++1 day
+Processing
+Finished
+Error
+Connection error: 
+The server refused the request ({0} {1})
+The server took too long to answer
+Couldn't connect: 
+The server doesn't support multi-part downloads
+The connection dropped before the file finished
+Not all parts of the file finished
+The connection dropped
+Size unknown
+No available qualities were found for this video
+Couldn't start yt-dlp
+No video was found on this page
+Best available quality — 
+Audio only — MP3
+Audio only — M4A (original quality)
+Merging audio with video
+Converting audio
+yt-dlp stopped (code {0})
+The download finished but the file wasn't found
+This link has no downloadable video
+YouTube didn't return any qualities for this video. Click "Try again"; if it keeps happening, update the video engine in Settings → Extension & video engine.
+YouTube asked to verify you're not a robot (too many requests from the same connection). Wait a little and try again.
+The site refused the download (403) — try again or update the video engine in Settings
+This video needs a sign-in
+This video is private
+Telegram channel
+Click "Open extensions page" for your browser (Chrome, Edge, Brave, Opera, Vivaldi).
+Turn on "Developer mode": at the top of the page in Chrome, Brave, Opera and Vivaldi, and in the ☰ side menu in Edge.
+Open extensions page — {0}
+Extensions page addresses: chrome://extensions — edge://extensions — brave://extensions — opera://extensions — vivaldi://extensions
+Click "Open Firefox" — it opens about:debugging (the address is copied; if it doesn't open, paste it in the address bar).
+Click "Load Temporary Add-on…".
+Choose the manifest.json file in the extension-firefox folder (the "Open Firefox extension folder" button).
+Note: Firefox removes a temporary add-on when it closes. To keep it installed, the extension must be signed on Mozilla's site addons.mozilla.org (free), or use Firefox Developer Edition.
+Open Firefox
+Open Firefox extension folder
+Firefox is not installed on this computer.
+Programmed and developed by 
+Programmed and developed by
+Version {0} — click here to update.
+Update now
+A new version of IBDM Pro is available: {0}
+IBDM Pro — Programmed and developed by Ibrahim Al-Khazraji
+Download with the browser
+The browser downloads the file itself instead of IBDM Pro
+Delete completed
+There are no completed downloads in the list.
+{0} completed downloads
+New download
+Queues
+File
+Downloads
+View
+Settings
+Exit
+Start all queues
+Stop all queues
+Start queue
+Stop queue
+New queue…
+New queue
+Queue
+Queue name
+Create
+Move to queue
+

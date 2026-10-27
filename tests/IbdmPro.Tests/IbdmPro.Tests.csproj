@@ -1,0 +1,10 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!-- Engine tests against tests/server.js. Run with: dotnet run -c Release, then the port and the data folder -->
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net10.0</TargetFramework>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\IbdmPro.Core\IbdmPro.Core.csproj" />
+  </ItemGroup>
+</Project>
