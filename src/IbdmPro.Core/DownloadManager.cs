@@ -83,7 +83,11 @@ public sealed class DownloadManager : IDisposable
         lock (Store.Items) Store.Items.Insert(0, item);
         Save();
         ListChanged?.Invoke();
-        if (start) { Pump(); UserStarted?.Invoke(item); }
+        if (start && _settings().Queues.Any(q => q.Name == item.QueueName && q.IsRunning))
+        {
+            Start(item);
+            UserStarted?.Invoke(item);
+        }
     }
 
     /// <summary>Starts now, even if the parallel limit is reached (the person asked for this one).</summary>
