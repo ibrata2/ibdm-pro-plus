@@ -219,7 +219,7 @@ public sealed class AboutWindow : Window
 {
     public AboutWindow()
     {
-        Ui.Setup(this, L.T("حول IBDM Pro"), 460, 520);
+        Ui.Setup(this, Program.ProductName, 460, 520);
         ResizeMode = ResizeMode.NoResize;
         SizeToContent = SizeToContent.Height;
         WindowStartupLocation = WindowStartupLocation.CenterOwner;
@@ -228,8 +228,8 @@ public sealed class AboutWindow : Window
         logo.Margin = new Thickness(0, 0, 0, 12);
         root.Children.Add(logo);
         var name = new StackPanel { Orientation = Orientation.Horizontal, FlowDirection = FlowDirection.LeftToRight, HorizontalAlignment = HorizontalAlignment.Center };
-        name.Children.Add(Ui.Text("IBDM", 26, Theme.Ink, bold: true));
-        name.Children.Add(Ui.Text(" Pro", 26, Theme.Gold, bold: true));
+        name.Children.Add(Ui.Text("IBRA Download", 24, Theme.Ink, bold: true));
+        name.Children.Add(Ui.Text(" Manager", 24, Theme.Gold, bold: true));
         root.Children.Add(name);
         root.Children.Add(Center(Ui.Text(L.T("الإصدار ") + Program.Version, 13, Theme.Muted)));
         root.Children.Add(Center(Ui.Text(L.T("مدير التحميل — يلتقط التحميلات من المتصفح، يقسّم الملف على عدة اتصالات، ويحمّل الفيديو بالجودة اللي تختارها"), 13, Theme.Ink, wrap: TextWrapping.Wrap), 14));
@@ -663,3 +663,5 @@ public sealed class SettingsWindow : Window
         text.Split([' ', ',', '\n', '\r', '\t', '؛', '،'], StringSplitOptions.RemoveEmptyEntries)
             .Select(x => x.Trim().TrimStart('.').ToLowerInvariant()).Where(x => x.Length > 0).Distinct().ToList();
 }
+
+

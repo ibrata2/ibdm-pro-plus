@@ -105,7 +105,7 @@ public sealed class MainWindow : Window
     public MainWindow(DownloadManager manager)
     {
         _manager = manager;
-        Ui.Setup(this, $"IBDM Pro {Program.Version}", 1280, 720);
+        Ui.Setup(this, $"{Program.ProductName} {Program.Version}", 1280, 720);
         MinWidth = 820;
         MinHeight = 480;
         WindowStartupLocation = WindowStartupLocation.CenterScreen;
@@ -538,9 +538,13 @@ public sealed class MainWindow : Window
         var active = items.Count(i => i.IsActive);
         _speed.Text = active > 0 ? L.F("⬇ {0} قيد التحميل", active) : "";
         _speedValue.Text = active > 0 ? Fmt.Speed(speed) : "";
-        IbdmApp.Instance.Tray?.SetTooltip(active > 0 ? L.F("IBDM Pro — {0} قيد التحميل {1}", active, Fmt.Speed(speed)) : "IBDM Pro");
+        var progressItem = items.FirstOrDefault(i => i.Status == DownloadStatus.Downloading && i.TotalBytes > 0);
+        var trayText = active > 0
+            ? Program.ProductName + " — " + L.T("يوجد تحميل جارٍ") + (progressItem is null ? "" : $" {progressItem.Percent:0}%")
+            : Program.ProductName;
+        IbdmApp.Instance.Tray?.SetTooltip(trayText);
         Title = active > 0 && items.FirstOrDefault(i => i.Status == DownloadStatus.Downloading) is { TotalBytes: > 0 } a
-            ? $"{a.Percent:0}% — IBDM Pro {Program.Version}" : $"IBDM Pro {Program.Version}";
+            ? $"{a.Percent:0}% — {Program.ProductName} {Program.Version}" : $"{Program.ProductName} {Program.Version}";
 
         var server = IbdmApp.Instance.Server;
         if (server is null) { _extStatus.Text = L.T("خادم الإضافة متوقف"); _extDot.Foreground = Theme.Red; }
@@ -561,7 +565,7 @@ public sealed class MainWindow : Window
     private void UpdateDetail()
     {
         var sel = Selected();
-        if (sel.Count != 1) { _detail.Text = sel.Count > 1 ? L.F("تم تحديد {0} تحميلات", sel.Count) : L.T("IBDM Pro — مدير التحميل"); return; }
+        if (sel.Count != 1) { _detail.Text = sel.Count > 1 ? L.F("تم تحديد {0} تحميلات", sel.Count) : Program.ProductName; return; }
         var i = sel[0];
         var where = i.Status == DownloadStatus.Completed ? i.FullPath : i.Folder;
         var q = i.Quality is not null ? L.F("الجودة: {0}   •   ", i.Quality) : "";

@@ -1,3 +1,5 @@
+using System.Collections.Concurrent;
+
 namespace IbdmPro.Core;
 
 /// <summary>Owns the download list: starts, pauses, resumes and removes downloads, keeps at most
@@ -8,6 +10,7 @@ public sealed class DownloadManager : IDisposable
     public SpeedLimiter Limiter { get; } = new();
     private readonly Dictionary<string, CancellationTokenSource> _running = [];
     private readonly Dictionary<string, (long Bytes, long Tick)> _samples = [];
+    private readonly ConcurrentDictionary<string, int> _automaticRetries = new();
     private readonly Timer _timer;
     private bool _dirty;
     private volatile bool _closing;
@@ -108,7 +111,7 @@ public sealed class DownloadManager : IDisposable
 
     public void Resume(DownloadItem item)
     {
-        if (item.Status is DownloadStatus.Paused or DownloadStatus.Error or DownloadStatus.Queued) { Start(item); UserStarted?.Invoke(item); }
+        if (item.Status is DownloadStatus.Paused or DownloadStatus.Error or DownloadStatus.Queued) { _automaticRetries.TryRemove(item.Id, out _); Start(item); UserStarted?.Invoke(item); }
     }
 
     public void Pause(DownloadItem item)
@@ -126,7 +129,7 @@ public sealed class DownloadManager : IDisposable
 
     public void ResumeAll()
     {
-        foreach (var i in Items.Where(i => i.Status is DownloadStatus.Paused or DownloadStatus.Error)) i.Status = DownloadStatus.Queued;
+        foreach (var i in Items.Where(i => i.Status is DownloadStatus.Paused or DownloadStatus.Error)) { _automaticRetries.TryRemove(i.Id, out _); i.Status = DownloadStatus.Queued; }
         Pump();
         ListChanged?.Invoke();
     }
@@ -209,6 +212,7 @@ public sealed class DownloadManager : IDisposable
             item.Status = DownloadStatus.Completed;
             item.Finished = DateTime.Now;
             item.Speed = 0;
+            _automaticRetries.TryRemove(item.Id, out _);
             lock (item.Gate) item.Segments.Clear();
             ItemCompleted?.Invoke(item);
         }
@@ -223,11 +227,33 @@ public sealed class DownloadManager : IDisposable
         }
         catch (Exception e)
         {
-            Log.Write($"{item.FileName}: {e}");
-            item.Status = DownloadStatus.Error;
-            item.Error = e is HttpRequestException h ? L.T("خطأ في الاتصال: ") + (h.InnerException?.Message ?? h.Message) : e.Message;
-            item.Speed = 0;
-            ItemFailed?.Invoke(item);
+            if (ct.IsCancellationRequested)
+            {
+                item.Status = _closing && _settings().ResumeOnStart ? DownloadStatus.Queued : DownloadStatus.Paused;
+                item.Speed = 0;
+            }
+            else if (IsRetryable(e) && _automaticRetries.GetValueOrDefault(item.Id) < 3)
+            {
+                var attempt = _automaticRetries.GetValueOrDefault(item.Id) + 1;
+                _automaticRetries[item.Id] = attempt;
+                item.Status = DownloadStatus.Queued;
+                item.Error = null;
+                item.Speed = 0;
+                Log.Write($"{item.FileName}: temporary download failure; automatic retry {attempt}/3: {e.Message}");
+                try { await Task.Delay(TimeSpan.FromSeconds(4 * Math.Pow(2, attempt - 1)), ct); }
+                catch (OperationCanceledException)
+                {
+                    item.Status = _closing && _settings().ResumeOnStart ? DownloadStatus.Queued : DownloadStatus.Paused;
+                }
+            }
+            else
+            {
+                Log.Write($"{item.FileName}: {e}");
+                item.Status = DownloadStatus.Error;
+                item.Error = e is HttpRequestException h ? L.T("خطأ في الاتصال: ") + (h.InnerException?.Message ?? h.Message) : e.Message;
+                item.Speed = 0;
+                ItemFailed?.Invoke(item);
+            }
         }
         finally
         {
@@ -237,6 +263,14 @@ public sealed class DownloadManager : IDisposable
             Pump();
         }
     }
+
+    private static bool IsRetryable(Exception e) => e switch
+    {
+        HttpRequestException h => h.StatusCode is null or System.Net.HttpStatusCode.RequestTimeout
+            or System.Net.HttpStatusCode.TooManyRequests or >= System.Net.HttpStatusCode.InternalServerError,
+        IOException or TimeoutException => true,
+        _ => false,
+    };
 
     private void Tick()
     {

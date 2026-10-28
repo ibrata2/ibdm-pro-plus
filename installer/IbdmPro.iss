@@ -11,18 +11,18 @@
 
 [Setup]
 AppId={{5B7E3A90-1D4C-4F8B-A2E6-9C31D0B7F4A1}
-AppName=IBDM Pro
+AppName=IBRA Download Manager
 AppVersion={#AppVersion}
-AppVerName=IBDM Pro {#AppVersion}
+AppVerName=IBRA Download Manager {#AppVersion}
 AppPublisher=ابراهيم الخزرجي — IBRAPROGRAM
 AppPublisherURL=https://t.me/ibraprogram
 AppSupportURL=https://t.me/ibraprogram
 AppUpdatesURL=https://t.me/ibraprogram
 AppCopyright=برمجة و تطوير ابراهيم الخزرجي
 VersionInfoVersion={#AppVersion}
-VersionInfoDescription=IBDM Pro — مدير التحميل
+VersionInfoDescription=IBRA Download Manager — مدير التحميل
 DefaultDirName={autopf}\IBDM Pro
-DefaultGroupName=IBDM Pro
+DefaultGroupName=IBRA Download Manager
 DisableProgramGroupPage=yes
 DisableDirPage=auto
 PrivilegesRequired=lowest
@@ -30,7 +30,7 @@ SetupIconFile=..\assets\ibdm.ico
 WizardImageFile=wizard-side-100.bmp,wizard-side-150.bmp,wizard-side-200.bmp
 WizardSmallImageFile=wizard-corner-100.bmp,wizard-corner-150.bmp,wizard-corner-200.bmp
 UninstallDisplayIcon={app}\IBDMPro.exe
-UninstallDisplayName=IBDM Pro
+UninstallDisplayName=IBRA Download Manager
 OutputDir=..\build\installer
 OutputBaseFilename=IBDM-Pro-Setup
 Compression=lzma2/ultra64
@@ -50,15 +50,15 @@ Name: "en"; MessagesFile: "compiler:Default.isl"
 
 [CustomMessages]
 en.SetupExtension=Install the browser extension automatically after setup (Chrome, Edge, Brave, Opera, Vivaldi)
-en.StartWithWindows=Start IBDM Pro with Windows (so it always catches downloads from the browser)
+en.StartWithWindows=Start IBRA Download Manager with Windows (so it always catches downloads from the browser)
 en.DesktopIcon=Create a desktop shortcut
 en.Extras=Options:
-en.Launch=Start IBDM Pro
+en.Launch=Start IBRA Download Manager
 ar.SetupExtension=تنصيب إضافة المتصفح تلقائياً بعد التثبيت (Chrome، Edge، Brave، Opera، Vivaldi)
-ar.StartWithWindows=تشغيل IBDM Pro مع بدء Windows (حتى يلتقط التحميلات من المتصفح دائماً)
+ar.StartWithWindows=تشغيل IBRA Download Manager مع بدء Windows (حتى يلتقط التحميلات من المتصفح دائماً)
 ar.DesktopIcon=إنشاء اختصار على سطح المكتب
 ar.Extras=خيارات:
-ar.Launch=تشغيل IBDM Pro
+ar.Launch=تشغيل IBRA Download Manager
 
 [Tasks]
 Name: "startup"; Description: "{cm:StartWithWindows}"; GroupDescription: "{cm:Extras}"
@@ -69,9 +69,9 @@ Name: "desktopicon"; Description: "{cm:DesktopIcon}"; GroupDescription: "{cm:Ext
 Source: "{#Source}\*"; DestDir: "{app}"; Excludes: "*.pdb"; Flags: ignoreversion recursesubdirs createallsubdirs
 
 [Icons]
-Name: "{autoprograms}\IBDM Pro"; Filename: "{app}\IBDMPro.exe"
-Name: "{autoprograms}\IBDM Pro — إضافة المتصفح"; Filename: "{app}\extension"
-Name: "{autodesktop}\IBDM Pro"; Filename: "{app}\IBDMPro.exe"; Tasks: desktopicon
+Name: "{autoprograms}\IBRA Download Manager"; Filename: "{app}\IBDMPro.exe"
+Name: "{autoprograms}\IBRA Download Manager — إضافة المتصفح"; Filename: "{app}\extension"
+Name: "{autodesktop}\IBRA Download Manager"; Filename: "{app}\IBDMPro.exe"; Tasks: desktopicon
 
 [Registry]
 ; The same value the app's "start with Windows" setting writes.
@@ -122,3 +122,5 @@ begin
     end;
   end;
 end;
+
+

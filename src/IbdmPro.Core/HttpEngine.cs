@@ -151,7 +151,9 @@ public static class HttpDownloader
 {
     public const long MinSegment = 512 * 1024;
     private const int Buffer = 64 * 1024;
-    private const int Retries = 8;
+    // A weak connection may drop before the first byte of a range arrives. Keep retrying
+    // long enough for brief Wi-Fi/router outages without requiring a manual Resume click.
+    private const int Retries = 30;
 
     public static async Task RunAsync(DownloadItem item, int connections, SpeedLimiter limiter, CancellationToken ct)
     {
@@ -347,3 +349,5 @@ public static class HttpDownloader
         _ => false,
     };
 }
+
+

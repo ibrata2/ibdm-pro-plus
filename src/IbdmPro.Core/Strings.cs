@@ -376,6 +376,8 @@ public static partial class L
         ["للمزيد من البرامج على تيليغرام"] = "More programs on Telegram",
         ["قائمة جديدة"] = "New queue",
         ["إضافة إلى قائمة الانتظار"] = "Add to queue",
+        ["فتح البرنامج"] = "Open the program",
+        ["يوجد تحميل جارٍ"] = "Download in progress",
         ["صوتيات"] = "Audio",
         ["مضغوطات"] = "Compressed",
         ["برامج"] = "Programs",

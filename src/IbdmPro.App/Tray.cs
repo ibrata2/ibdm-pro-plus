@@ -3,7 +3,7 @@ using WF = System.Windows.Forms;
 
 namespace IbdmPro.App;
 
-/// <summary>The icon next to the clock: IBDM Pro keeps running there so the browser can always hand downloads to it.</summary>
+/// <summary>The icon next to the clock: the app keeps running there so the browser can always hand downloads to it.</summary>
 public sealed class Tray : IDisposable
 {
     private readonly WF.NotifyIcon _icon;
@@ -13,7 +13,7 @@ public sealed class Tray : IDisposable
     public Tray(IbdmApp app)
     {
         var menu = new WF.ContextMenuStrip { RightToLeft = L.Rtl ? WF.RightToLeft.Yes : WF.RightToLeft.No };
-        menu.Items.Add(L.T("فتح IBDM Pro"), null, (_, _) => app.ShowMain());
+        menu.Items.Add(L.T("فتح البرنامج"), null, (_, _) => app.ShowMain());
         menu.Items.Add(L.T("إضافة رابط…"), null, (_, _) => { app.ShowMain(); app.Main.AddUrl(); });
         menu.Items.Add(new WF.ToolStripSeparator());
         menu.Items.Add(L.T("استئناف الكل"), null, (_, _) => app.Manager.ResumeAll());
@@ -30,7 +30,7 @@ public sealed class Tray : IDisposable
         _icon = new WF.NotifyIcon
         {
             Icon = icon ?? System.Drawing.SystemIcons.Application,
-            Text = "IBDM Pro",
+            Text = Program.ProductName,
             ContextMenuStrip = menu,
             Visible = true,
         };
@@ -66,3 +66,5 @@ public sealed class Tray : IDisposable
         _icon.Dispose();
     }
 }
+
+

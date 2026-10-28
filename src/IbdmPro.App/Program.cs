@@ -8,6 +8,7 @@ namespace IbdmPro.App;
 
 public static class Program
 {
+    public const string ProductName = "IBRA Download Manager";
     public static string Version { get; } =
         (typeof(Program).Assembly.GetName().Version is { } v ? $"{v.Major}.{v.Minor}.{v.Build}" : "1.0.0");
 
