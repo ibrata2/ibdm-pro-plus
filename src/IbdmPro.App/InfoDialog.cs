@@ -46,14 +46,14 @@ public sealed class InfoDialog : Window
 
     private readonly StackPanel _body = new();
     private readonly TextBlock _headIcon = Ui.Glyph("", 26, Theme.Gold);
-    private readonly Border _headTile = new() { Width = 52, Height = 52, CornerRadius = new CornerRadius(12), Background = Theme.GoldSoft };
+    private readonly Border _headTile = new() { Width = 44, Height = 44, CornerRadius = new CornerRadius(10), Background = Theme.GoldSoft };
     private readonly TextBlock _headTitle = Ui.Text(L.T("جاري فحص الرابط…"), 16, Theme.Ink, bold: true);
     private readonly TextBlock _headSub = Ui.Text("", 12, Theme.Muted);
     private readonly Button _start, _later;
 
     private readonly TextBox _name = Ui.Input();
     private readonly TextBox _folder = Ui.Input();
-    private readonly ComboBox _queue = new() { MinWidth = 180, Padding = new Thickness(6, 4, 6, 4) };
+    private readonly ComboBox _queue = new() { MinWidth = 150, Padding = new Thickness(5, 2, 5, 2) };
     private readonly CheckBox _remember = Ui.Check(L.T("تذكر هذا المجلد لهذا النوع من الملفات"), false);
     private readonly TextBlock _space = Ui.Text("", 12, Theme.Muted, wrap: TextWrapping.Wrap);
     private readonly TextBlock _sizeValue = Ui.Ltr("", 13, Theme.Ink, bold: true);
@@ -71,7 +71,7 @@ public sealed class InfoDialog : Window
     private InfoDialog(CaptureRequest req)
     {
         _req = req;
-        Ui.Setup(this, L.T("IBDM Pro — معلومات الملف"), 640, 640);
+        Ui.Setup(this, L.T("IBDM Pro — معلومات الملف"), 590, 580);
         WindowStartupLocation = WindowStartupLocation.CenterScreen;
         MinHeight = 360;
         MaxHeight = SystemParameters.WorkArea.Height - 40;
@@ -80,18 +80,23 @@ public sealed class InfoDialog : Window
         _category = _s.CategoryFor(req.FileName ?? FileNames.FromUrl(req.Url) ?? "");
 
         _start = Ui.Button(L.T("بدء التحميل"), "", Theme.PrimaryButton, () => Finish(true));
-        _later = Ui.Button(L.T("تحميل لاحقاً"), "", Theme.Button, () => Finish(false));
+        _later = Ui.Button(L.T("إضافة إلى قائمة الانتظار"), "", Theme.Button, () => Finish(false));
         _start.IsEnabled = _later.IsEnabled = false;
         _start.IsDefault = true;
         var cancel = Ui.Button(L.T("إلغاء"), style: Theme.Button, click: Close);
         cancel.IsCancel = true;
+        foreach (var button in new[] { _start, _later, cancel })
+        {
+            button.Padding = new Thickness(9, 5, 9, 5);
+            button.MinWidth = 0;
+        }
 
         // header
         _headTile.Child = _headIcon;
-        var head = new DockPanel { Margin = new Thickness(0, 0, 0, 16) };
+        var head = new DockPanel { Margin = new Thickness(0, 0, 0, 10) };
         DockPanel.SetDock(_headTile, Dock.Left);
         head.Children.Add(_headTile);
-        var titles = new StackPanel { Margin = new Thickness(14, 0, 0, 0), VerticalAlignment = VerticalAlignment.Center };
+        var titles = new StackPanel { Margin = new Thickness(10, 0, 0, 0), VerticalAlignment = VerticalAlignment.Center };
         titles.Children.Add(_headTitle);
         titles.Children.Add(_headSub);
         head.Children.Add(titles);
@@ -99,10 +104,10 @@ public sealed class InfoDialog : Window
         _body.Children.Add(new ProgressBar { Style = Theme.Progress, IsIndeterminate = true, Margin = new Thickness(0, 10, 0, 10) });
         _body.Children.Add(Ui.Text(_req.Url, 12, Theme.Muted));
 
-        var buttons = new StackPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(0, 18, 0, 0) };
+        var buttons = new StackPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(0, 10, 0, 0) };
         foreach (var b in new[] { _start, _later, cancel }) { b.Margin = new Thickness(0, 0, 8, 0); buttons.Children.Add(b); }
 
-        var root = new StackPanel { Margin = new Thickness(24, 20, 24, 20) };
+        var root = new StackPanel { Margin = new Thickness(16, 14, 16, 14) };
         root.Children.Add(head);
         root.Children.Add(_body);
         root.Children.Add(buttons);
@@ -137,7 +142,7 @@ public sealed class InfoDialog : Window
     private static UIElement Credit()
     {
         var t = Ui.Text(L.T("IBDM Pro — برمجة و تطوير ابراهيم الخزرجي"), 11, Theme.Muted);
-        t.Margin = new Thickness(0, 14, 0, 0);
+        t.Margin = new Thickness(0, 8, 0, 0);
         t.Opacity = 0.7;
         return t;
     }
@@ -251,7 +256,7 @@ public sealed class InfoDialog : Window
         SetHead(_category, L.T("معلومات الملف"), Host(p.FinalUrl));
 
         _body.Children.Clear();
-        _body.Children.Add(Ui.Label(L.T("اسم الملف")));
+        _body.Children.Add(CompactLabel(L.T("اسم الملف")));
         _name.Text = name;
         _body.Children.Add(_name);
 
@@ -266,7 +271,7 @@ public sealed class InfoDialog : Window
         _body.Children.Add(card);
 
         AddWhere();
-        _body.Children.Add(Ui.Label(L.T("الرابط")));
+        _body.Children.Add(CompactLabel(L.T("الرابط")));
         string shown;
         try { shown = Uri.UnescapeDataString(p.FinalUrl); } catch (Exception) { shown = p.FinalUrl; }
         var url = Ui.Input(shown);
@@ -294,21 +299,21 @@ public sealed class InfoDialog : Window
         {
             try
             {
-                var img = new Image { Width = 160, Height = 90, Stretch = Stretch.UniformToFill, Source = new BitmapImage(new Uri(m.Thumbnail)) };
-                var frame = new Border { Child = img, CornerRadius = new CornerRadius(8), ClipToBounds = true, Margin = new Thickness(0, 0, 14, 0), Background = Theme.Card };
+                var img = new Image { Width = 128, Height = 72, Stretch = Stretch.UniformToFill, Source = new BitmapImage(new Uri(m.Thumbnail)) };
+                var frame = new Border { Child = img, CornerRadius = new CornerRadius(7), ClipToBounds = true, Margin = new Thickness(0, 0, 10, 0), Background = Theme.Card };
                 DockPanel.SetDock(frame, Dock.Left);
                 top.Children.Add(frame);
             }
             catch (Exception) { }
         }
         var titleBox = new StackPanel();
-        titleBox.Children.Add(Ui.Text(m.Title, 14, Theme.Ink, bold: true, wrap: TextWrapping.Wrap));
+        titleBox.Children.Add(Ui.Text(m.Title, 13, Theme.Ink, bold: true, wrap: TextWrapping.Wrap));
         if (m.Duration > 0) titleBox.Children.Add(Ui.Text(L.T("المدة: ") + Fmt.Duration(m.Duration), 12, Theme.Muted));
         top.Children.Add(titleBox);
         _body.Children.Add(top);
 
         // qualities: one drop-down — the chosen quality shows, the rest open in a list under it
-        _body.Children.Add(Ui.Label(L.T("الجودة")));
+        _body.Children.Add(CompactLabel(L.T("الجودة")));
         var defaultOption = m.Options.FirstOrDefault(o => !o.AudioOnly && o.Height is > 0 and <= 1080 && o.Ext == "mp4")
             ?? m.Options.FirstOrDefault(o => !o.AudioOnly) ?? m.Options[0];
 
@@ -336,7 +341,7 @@ public sealed class InfoDialog : Window
         var picker = new ToggleButton
         {
             Style = Theme.Button, HorizontalContentAlignment = HorizontalAlignment.Stretch,
-            Padding = new Thickness(12, 9, 12, 9), Cursor = System.Windows.Input.Cursors.Hand,
+            Padding = new Thickness(9, 6, 9, 6), Cursor = System.Windows.Input.Cursors.Hand,
         };
         var popupList = new StackPanel { Margin = new Thickness(6) };
         var popup = new Popup
@@ -385,7 +390,7 @@ public sealed class InfoDialog : Window
             var rb = new RadioButton
             {
                 Style = Theme.Choice, Content = OptionRow(o, header: false), GroupName = "q" + GetHashCode(), Tag = o,
-                HorizontalContentAlignment = HorizontalAlignment.Stretch, Margin = new Thickness(0, 0, 0, 3), Padding = new Thickness(10, 7, 10, 7),
+                HorizontalContentAlignment = HorizontalAlignment.Stretch, Margin = new Thickness(0, 0, 0, 2), Padding = new Thickness(8, 5, 8, 5),
             };
             rb.Click += (_, _) => { Choose((MediaOption)rb.Tag); popup.IsOpen = false; };
             rb.MouseDoubleClick += (_, _) => { if (_start.IsEnabled) Finish(true); };
@@ -394,7 +399,7 @@ public sealed class InfoDialog : Window
         _body.Children.Add(picker);
         Choose(defaultOption);
 
-        _body.Children.Add(Ui.Label(L.T("اسم الملف")));
+        _body.Children.Add(CompactLabel(L.T("اسم الملف")));
         _body.Children.Add(_name);
         AddWhere();
 
@@ -417,27 +422,34 @@ public sealed class InfoDialog : Window
 
     private void AddWhere()
     {
-        _body.Children.Add(Ui.Label(L.T("النوع (يحدد المجلد)")));
+        _body.Children.Add(CompactLabel(L.T("النوع (يحدد المجلد)")));
         _categories.Children.Clear();
         foreach (var c in _s.Categories)
         {
             var sp = new StackPanel { Orientation = Orientation.Horizontal };
             sp.Children.Add(Ui.Glyph(c.Icon, 13, Theme.Br(c.Color)));
-            var t = Ui.Text(L.T(c.Name), 12.5);
-            t.Margin = new Thickness(6, 0, 0, 0);
+            var t = Ui.Text(L.T(c.Name), 11.5);
+            t.Margin = new Thickness(5, 0, 0, 0);
             sp.Children.Add(t);
-            var chip = new RadioButton { Style = Theme.Choice, Content = sp, GroupName = "c" + GetHashCode(), Tag = c, Padding = new Thickness(10, 5, 10, 5), Margin = new Thickness(0, 0, 6, 6) };
+            var chip = new RadioButton { Style = Theme.Choice, Content = sp, GroupName = "c" + GetHashCode(), Tag = c, Padding = new Thickness(7, 3, 7, 3), Margin = new Thickness(0, 0, 4, 4) };
             chip.Checked += (_, _) => SelectCategory((Category)chip.Tag, fromChip: true);
             _categories.Children.Add(chip);
         }
         _body.Children.Add(_categories);
 
-        _body.Children.Add(Ui.Label(L.T("قائمة الانتظار")));
+        _body.Children.Add(CompactLabel(L.T("قائمة الانتظار")));
         _queue.ItemsSource = _s.Queues.Select(q => q.Name).ToList();
         _queue.SelectedItem = _s.Queues.Any(q => q.Name == _req.QueueName) ? _req.QueueName : _s.Queues.FirstOrDefault()?.Name;
-        _body.Children.Add(_queue);
+        var queueRow = new DockPanel();
+        var newQueue = Ui.Button(L.T("قائمة جديدة"), "", Theme.Button, CreateQueue);
+        newQueue.Padding = new Thickness(7, 3, 7, 3);
+        newQueue.Margin = new Thickness(8, 0, 0, 0);
+        DockPanel.SetDock(newQueue, Dock.Left);
+        queueRow.Children.Add(newQueue);
+        queueRow.Children.Add(_queue);
+        _body.Children.Add(queueRow);
 
-        _body.Children.Add(Ui.Label(L.T("حفظ في")));
+        _body.Children.Add(CompactLabel(L.T("حفظ في")));
         var browse = Ui.Button(L.T("تغيير…"), "", Theme.Button, Browse);
         browse.Margin = new Thickness(8, 0, 0, 0);
         var row = new DockPanel();
@@ -478,6 +490,48 @@ public sealed class InfoDialog : Window
             _folder.Text = dlg.FolderName;
             _folderEdited = true;
         }
+    }
+
+    private void CreateQueue()
+    {
+        var dialog = new Window
+        {
+            Title = L.T("قائمة انتظار جديدة"), Width = 340, SizeToContent = SizeToContent.Height,
+            ResizeMode = ResizeMode.NoResize, WindowStartupLocation = WindowStartupLocation.CenterOwner, Owner = this,
+        };
+        Ui.Setup(dialog, L.T("قائمة انتظار جديدة"), 340, 140);
+        var input = Ui.Input();
+        var panel = new StackPanel { Margin = new Thickness(16) };
+        panel.Children.Add(CompactLabel(L.T("اسم القائمة")));
+        panel.Children.Add(input);
+        var actions = new StackPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(0, 10, 0, 0) };
+        var create = Ui.Button(L.T("إنشاء"), "", Theme.PrimaryButton, () =>
+        {
+            var name = input.Text.Trim();
+            if (name.Length == 0) { input.Focus(); return; }
+            IbdmApp.Instance.Manager.CreateQueue(name);
+            dialog.DialogResult = true;
+        });
+        var cancel = Ui.Button(L.T("إلغاء"), style: Theme.Button, click: dialog.Close);
+        cancel.Margin = new Thickness(7, 0, 0, 0);
+        actions.Children.Add(create);
+        actions.Children.Add(cancel);
+        panel.Children.Add(actions);
+        dialog.Content = panel;
+        dialog.Loaded += (_, _) => input.Focus();
+        if (dialog.ShowDialog() == true)
+        {
+            var selected = input.Text.Trim();
+            _queue.ItemsSource = _s.Queues.Select(q => q.Name).ToList();
+            _queue.SelectedItem = _s.Queues.FirstOrDefault(q => q.Name == selected)?.Name ?? _s.Queues.LastOrDefault()?.Name;
+        }
+    }
+
+    private static TextBlock CompactLabel(string text)
+    {
+        var label = (TextBlock)Ui.Label(text);
+        label.Margin = new Thickness(0, 6, 0, 2);
+        return label;
     }
 
     private void UpdateSpace()
