@@ -35,8 +35,8 @@ public sealed class ProgressWindow : Window
     private readonly StackPanel _connRows = new();
     private readonly StackPanel _details = new();
     private readonly Button _pause, _cancel, _toggleDetails, _toApp;
-    private readonly StackPanel _runningButtons = new() { Orientation = Orientation.Horizontal };
-    private readonly StackPanel _doneButtons = new() { Orientation = Orientation.Horizontal, Visibility = Visibility.Collapsed };
+    private readonly WrapPanel _runningButtons = new();
+    private readonly WrapPanel _doneButtons = new() { Visibility = Visibility.Collapsed };
     private readonly CheckBox _autoClose, _openFile, _openFolder, _dontShow;
     private readonly TextBlock _error = Ui.Text("", 12.5, Theme.Red, wrap: TextWrapping.Wrap);
 
@@ -65,15 +65,18 @@ public sealed class ProgressWindow : Window
     {
         _item = item;
         _manager = manager;
-        Ui.Setup(this, item.FileName, 600, 520);
-        ResizeMode = ResizeMode.CanMinimize;
-        SizeToContent = SizeToContent.Height;
+        Ui.Setup(this, item.FileName, 700, 560);
+        ResizeMode = ResizeMode.CanResize;
+        SizeToContent = SizeToContent.Manual;
+        MinWidth = 540;
+        MinHeight = 400;
+        MaxHeight = Math.Max(MinHeight, SystemParameters.WorkArea.Height - 32);
         WindowStartupLocation = WindowStartupLocation.CenterScreen;
         var s = Settings.Current;
 
         // header
         _iconTile.Child = _icon;
-        var head = new DockPanel { Margin = new Thickness(0, 0, 0, 12) };
+        var head = new DockPanel { Margin = new Thickness(0, 0, 0, 8) };
         DockPanel.SetDock(_iconTile, Dock.Left);
         head.Children.Add(_iconTile);
         var titles = new StackPanel { Margin = new Thickness(12, 0, 0, 0), VerticalAlignment = VerticalAlignment.Center };
@@ -84,8 +87,8 @@ public sealed class ProgressWindow : Window
         head.Children.Add(titles);
 
         // facts
-        var facts = new Grid { Margin = new Thickness(0, 8, 0, 0) };
-        facts.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(140) });
+        var facts = new Grid { Margin = new Thickness(0, 4, 0, 0) };
+        facts.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(128) });
         facts.ColumnDefinitions.Add(new ColumnDefinition());
         var rows = new (string, UIElement)[]
         {
@@ -94,8 +97,8 @@ public sealed class ProgressWindow : Window
         };
         for (var i = 0; i < rows.Length; i++)
         {
-            facts.RowDefinitions.Add(new RowDefinition { Height = new GridLength(26) });
-            var l = Ui.Text(rows[i].Item1, 12.5, Theme.Muted);
+            facts.RowDefinitions.Add(new RowDefinition { Height = new GridLength(23) });
+            var l = Ui.Text(rows[i].Item1, 12, Theme.Muted);
             Grid.SetRow(l, i);
             facts.Children.Add(l);
             var v = rows[i].Item2;
@@ -103,12 +106,12 @@ public sealed class ProgressWindow : Window
             Grid.SetColumn(v, 1);
             facts.Children.Add(v);
         }
-        var factsCard = Ui.Card(facts, new Thickness(16, 10, 16, 10));
+        var factsCard = Ui.Card(facts, new Thickness(12, 7, 12, 7));
 
         // big progress
-        var progress = new DockPanel { Margin = new Thickness(0, 14, 0, 0) };
-        _percent.Margin = new Thickness(12, 0, 0, 0);
-        _percent.MinWidth = 76;
+        var progress = new DockPanel { Margin = new Thickness(0, 8, 0, 0) };
+        _percent.Margin = new Thickness(8, 0, 0, 0);
+        _percent.MinWidth = 64;
         _percent.HorizontalAlignment = HorizontalAlignment.Right;
         DockPanel.SetDock(_percent, Dock.Right);
         progress.Children.Add(_percent);
@@ -127,19 +130,19 @@ public sealed class ProgressWindow : Window
         var openFolder = Ui.Button(L.T("فتح المجلد"), "", Theme.Button, () => { Ui.ShowInFolder(_item.FullPath); Close(); });
         var close = Ui.Button(L.T("إغلاق"), style: Theme.Button, click: Close);
         foreach (var b in new[] { openFile, openFolder, close }) { b.Margin = new Thickness(0, 0, 8, 0); _doneButtons.Children.Add(b); }
-        var buttonRow = new Grid { Margin = new Thickness(0, 16, 0, 0) };
+        var buttonRow = new Grid { Margin = new Thickness(0, 10, 0, 0) };
         buttonRow.Children.Add(_runningButtons);
         buttonRow.Children.Add(_doneButtons);
 
         // per-connection details
-        _details.Margin = new Thickness(0, 14, 0, 0);
+        _details.Margin = new Thickness(0, 8, 0, 0);
         _details.Children.Add(Ui.Text(L.T("نقاط البداية لكل اتصال وحالة تقدّمه"), 12, Theme.Muted));
-        _segments.Margin = new Thickness(0, 6, 0, 8);
+        _segments.Margin = new Thickness(0, 4, 0, 6);
         _details.Children.Add(_segments);
         var listHead = ConnRow("N.", L.T("المحمَّل"), L.T("المعلومات"), header: true);
         var list = new StackPanel();
         list.Children.Add(listHead);
-        list.Children.Add(new ScrollViewer { Content = _connRows, MaxHeight = 150, VerticalScrollBarVisibility = ScrollBarVisibility.Auto });
+        list.Children.Add(new ScrollViewer { Content = _connRows, MaxHeight = 100, VerticalScrollBarVisibility = ScrollBarVisibility.Auto });
         _details.Children.Add(Ui.Card(list, new Thickness(0, 4, 0, 4)));
 
         // when it finishes
@@ -157,7 +160,7 @@ public sealed class ProgressWindow : Window
             st.Save();
         }
         foreach (var c in new[] { _autoClose, _openFile, _openFolder, _dontShow }) { c.Checked += (_, _) => Persist(); c.Unchecked += (_, _) => Persist(); }
-        var options = new StackPanel { Margin = new Thickness(0, 12, 0, 0) };
+        var options = new StackPanel { Margin = new Thickness(0, 7, 0, 0) };
         options.Children.Add(_autoClose);
         options.Children.Add(_openFile);
         options.Children.Add(_openFolder);
@@ -167,10 +170,10 @@ public sealed class ProgressWindow : Window
         _error.Visibility = Visibility.Collapsed;
 
         var credit = Ui.Text(L.T("IBDM Pro — برمجة و تطوير ابراهيم الخزرجي"), 11, Theme.Muted);
-        credit.Margin = new Thickness(0, 12, 0, 0);
+        credit.Margin = new Thickness(0, 7, 0, 0);
         credit.Opacity = 0.75;
 
-        var root = new StackPanel { Margin = new Thickness(22, 18, 22, 16) };
+        var root = new StackPanel { Margin = new Thickness(16, 12, 16, 10) };
         root.Children.Add(head);
         root.Children.Add(factsCard);
         root.Children.Add(progress);
@@ -179,9 +182,9 @@ public sealed class ProgressWindow : Window
         root.Children.Add(_details);
         root.Children.Add(options);
         root.Children.Add(credit);
-        Content = root;
+        Content = new ScrollViewer { Content = root, VerticalScrollBarVisibility = ScrollBarVisibility.Auto, HorizontalScrollBarVisibility = ScrollBarVisibility.Disabled };
 
-        if (item.Kind == DownloadKind.Media) ToggleDetails(); // videos have no byte ranges to show
+        SetDetailsVisible(s.ProgressDetailsVisible ?? item.Kind != DownloadKind.Media);
         _timer.Tick += (_, _) => Refresh();
         _timer.Start();
         Closed += (_, _) => { _timer.Stop(); OpenWindows.Remove(_item.Id); };
@@ -318,8 +321,19 @@ public sealed class ProgressWindow : Window
     private void ToggleDetails()
     {
         var show = _details.Visibility != Visibility.Visible;
+        SetDetailsVisible(show, persist: true);
+    }
+
+    private void SetDetailsVisible(bool show, bool persist = false)
+    {
         _details.Visibility = show ? Visibility.Visible : Visibility.Collapsed;
         SetButton(_toggleDetails, show ? (L.T("إخفاء التفاصيل"), "") : (L.T("عرض التفاصيل"), ""));
+        if (persist)
+        {
+            var settings = Settings.Current;
+            settings.ProgressDetailsVisible = show;
+            settings.Save();
+        }
     }
 
     /// <summary>"Into the app": the download keeps going in the main window's list.</summary>
@@ -378,3 +392,5 @@ public sealed class SegmentBar : FrameworkElement
         }
     }
 }
+
+

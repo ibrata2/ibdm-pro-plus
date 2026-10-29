@@ -46,6 +46,7 @@ public sealed class Settings
     public bool ShowInfoBeforeDownload { get; set; } = true;
     /// <summary>The window that shows each download's progress (like IDM).</summary>
     public bool ShowProgressWindow { get; set; } = true;
+    public bool? ProgressDetailsVisible { get; set; }
     public bool ProgressAutoClose { get; set; }
     public bool ProgressOpenFile { get; set; }
     public bool ProgressOpenFolder { get; set; }
