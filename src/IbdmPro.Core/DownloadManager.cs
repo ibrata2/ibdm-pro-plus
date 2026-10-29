@@ -213,6 +213,7 @@ public sealed class DownloadManager : IDisposable
             item.Finished = DateTime.Now;
             item.Speed = 0;
             _automaticRetries.TryRemove(item.Id, out _);
+            _retryProgress.TryRemove(item.Id, out _);
             lock (item.Gate) item.Segments.Clear();
             ItemCompleted?.Invoke(item);
         }
@@ -232,15 +233,18 @@ public sealed class DownloadManager : IDisposable
                 item.Status = _closing && _settings().ResumeOnStart ? DownloadStatus.Queued : DownloadStatus.Paused;
                 item.Speed = 0;
             }
-            else if (IsRetryable(e) && _automaticRetries.GetValueOrDefault(item.Id) < 3)
+            else if (IsRetryable(e) && RetryBudget(item) < MaxAutomaticRetries)
             {
-                var attempt = _automaticRetries.GetValueOrDefault(item.Id) + 1;
+                // A network hiccup: wait and carry on by itself (resuming from where it stopped), so the user does
+                // not have to press "Resume". Any progress since the last failure gives a fresh set of tries.
+                var attempt = RetryBudget(item) + 1;
                 _automaticRetries[item.Id] = attempt;
+                _retryProgress[item.Id] = item.Downloaded;
                 item.Status = DownloadStatus.Queued;
                 item.Error = null;
                 item.Speed = 0;
-                Log.Write($"{item.FileName}: temporary download failure; automatic retry {attempt}/3: {e.Message}");
-                try { await Task.Delay(TimeSpan.FromSeconds(4 * Math.Pow(2, attempt - 1)), ct); }
+                Log.Write($"{item.FileName}: temporary download failure; automatic retry {attempt}/{MaxAutomaticRetries}: {e.Message}");
+                try { await Task.Delay(TimeSpan.FromSeconds(Math.Min(60, 3 * Math.Pow(2, attempt - 1))), ct); }
                 catch (OperationCanceledException)
                 {
                     item.Status = _closing && _settings().ResumeOnStart ? DownloadStatus.Queued : DownloadStatus.Paused;
@@ -262,6 +266,16 @@ public sealed class DownloadManager : IDisposable
             ListChanged?.Invoke();
             Pump();
         }
+    }
+
+    private const int MaxAutomaticRetries = 12;
+    private readonly System.Collections.Concurrent.ConcurrentDictionary<string, long> _retryProgress = new();
+
+    /// <summary>Tries used since the download last moved forward.</summary>
+    private int RetryBudget(DownloadItem item)
+    {
+        if (_retryProgress.TryGetValue(item.Id, out var at) && item.Downloaded > at) _automaticRetries[item.Id] = 0;
+        return _automaticRetries.GetValueOrDefault(item.Id);
     }
 
     private static bool IsRetryable(Exception e) => e switch

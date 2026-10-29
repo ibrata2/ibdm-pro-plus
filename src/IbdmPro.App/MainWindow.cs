@@ -165,10 +165,12 @@ public sealed class MainWindow : Window
             return item;
         }
 
-        var menus = new Menu { Height = 29, Background = Theme.Panel, FlowDirection = FlowDirection.LeftToRight, Padding = new Thickness(4, 0, 4, 0) };
+        // Arabic: the menus start on the right, like the rest of the window.
+        var menus = new Menu { Height = 29, Background = Theme.Panel, FlowDirection = L.Rtl ? FlowDirection.RightToLeft : FlowDirection.LeftToRight, Padding = new Thickness(4, 0, 4, 0) };
         var tasks = new MenuItem { Header = L.T("المهام") };
         tasks.Items.Add(Command("تحميل جديد", AddUrl));
-        tasks.Items.Add(Command("قائمة انتظار جديدة…", CreateQueue));
+        tasks.Items.Add(Command("تحميل فيديو من رابط…", AddVideo));
+        tasks.Items.Add(Command("قائمة انتظار جديدة…", NewQueue));
         tasks.Items.Add(new Separator());
         tasks.Items.Add(Command("خروج", Close));
         var file = new MenuItem { Header = L.T("ملف") };
@@ -181,18 +183,10 @@ public sealed class MainWindow : Window
         downloads.Items.Add(new Separator());
         downloads.Items.Add(Command("حذف", Delete));
         downloads.Items.Add(Command("حذف المكتملة", DeleteCompleted));
-        downloads.Items.Add(Command("نقل إلى قائمة", () =>
-        {
-            var menu = new ContextMenu();
-            foreach (var q in Settings.Current.Queues)
-            {
-                var target = new MenuItem { Header = q.Name };
-                target.Click += (_, _) => { _manager.MoveToQueue(Selected(), q.Name); Sync(); };
-                menu.Items.Add(target);
-            }
-            menu.PlacementTarget = this;
-            menu.IsOpen = true;
-        }));
+        downloads.Items.Add(QueueTargets(L.T("نقل إلى قائمة")));
+        var queues = new MenuItem { Header = L.T("قوائم الانتظار") };
+        queues.Items.Add(new MenuItem()); // filled when opened, so new queues appear
+        queues.SubmenuOpened += (_, e) => { if (ReferenceEquals(e.OriginalSource, queues)) FillQueueItems(queues.Items); };
         var view = new MenuItem { Header = L.T("عرض") };
         view.Items.Add(Command("كل التحميلات", () => SetFilter("all")));
         view.Items.Add(Command("قيد التحميل", () => SetFilter("active")));
@@ -212,6 +206,7 @@ public sealed class MainWindow : Window
         menus.Items.Add(tasks);
         menus.Items.Add(file);
         menus.Items.Add(downloads);
+        menus.Items.Add(queues);
         menus.Items.Add(view);
         menus.Items.Add(help);
         menus.Items.Add(registration);
@@ -219,6 +214,7 @@ public sealed class MainWindow : Window
         var tools = new DockPanel { Height = 72, LastChildFill = false, Background = Theme.Panel, FlowDirection = FlowDirection.LeftToRight };
         var buttons = new StackPanel { Orientation = Orientation.Horizontal, VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(4, 0, 8, 0), FlowDirection = FlowDirection.LeftToRight };
         buttons.Children.Add(Ui.Tool(L.T("إضافة رابط"), "", AddUrl));
+        buttons.Children.Add(Ui.Tool(L.T("تحميل فيديو"), "\uE714", AddVideo, Theme.Red));
         buttons.Children.Add(Ui.Tool(L.T("استئناف"), "", () => ForSelected(i => _manager.Resume(i)), Theme.Green));
         buttons.Children.Add(Ui.Tool(L.T("إيقاف"), "", () => ForSelected(i => _manager.Pause(i)), Theme.Ink));
         buttons.Children.Add(Ui.Tool(L.T("إيقاف الكل"), "", _manager.PauseAll, Theme.Ink));
@@ -254,8 +250,39 @@ public sealed class MainWindow : Window
         return button;
     }
 
-    private void RefreshQueueMenu(ContextMenu menu)
+    private void RefreshQueueMenu(ContextMenu menu) => FillQueueItems(menu.Items);
+
+    /// <summary>"Move to queue / add to queue": a sub-menu listing the queues (built when opened).</summary>
+    private MenuItem QueueTargets(string title)
     {
+        var parent = new MenuItem { Header = title };
+        parent.Items.Add(new MenuItem());
+        parent.SubmenuOpened += (_, e) =>
+        {
+            if (!ReferenceEquals(e.OriginalSource, parent)) return;
+            parent.Items.Clear();
+            foreach (var q in Settings.Current.Queues)
+            {
+                var target = new MenuItem { Header = q.Name };
+                target.Click += (_, _) => { _manager.MoveToQueue(Selected(), q.Name); Sync(); };
+                parent.Items.Add(target);
+            }
+            parent.Items.Add(new Separator());
+            var create = new MenuItem { Header = L.T("قائمة انتظار جديدة…") };
+            create.Click += (_, _) =>
+            {
+                var sel = Selected();
+                var name = CreateQueue();
+                if (name is not null && sel.Count > 0) { _manager.MoveToQueue(sel, name); Sync(); }
+            };
+            parent.Items.Add(create);
+        };
+        return parent;
+    }
+
+    private void FillQueueItems(ItemCollection items)
+    {
+        var menu = new { Items = items };
         menu.Items.Clear();
         var startAll = new MenuItem { Header = L.T("بدء كل القوائم") };
         startAll.Click += (_, _) => { foreach (var q in Settings.Current.Queues) _manager.SetQueueRunning(q.Name, true); };
@@ -276,8 +303,9 @@ public sealed class MainWindow : Window
             menu.Items.Add(parent);
         }
         menu.Items.Add(new Separator());
+        menu.Items.Add(QueueTargets(L.T("إضافة المحدد إلى قائمة الانتظار")));
         var create = new MenuItem { Header = L.T("قائمة انتظار جديدة…") };
-        create.Click += (_, _) => CreateQueue();
+        create.Click += (_, _) => NewQueue();
         menu.Items.Add(create);
     }
 
@@ -342,7 +370,7 @@ public sealed class MainWindow : Window
             queueRow.ContextMenu = menu;
             _nav.Children.Add(queueRow);
         }
-        var newQueue = Ui.Button(L.T("قائمة انتظار جديدة"), "", Theme.Button, CreateQueue);
+        var newQueue = Ui.Button(L.T("قائمة انتظار جديدة"), "", Theme.Button, NewQueue);
         newQueue.Margin = new Thickness(0, 6, 0, 0);
         newQueue.FontSize = 12;
         _nav.Children.Add(newQueue);
@@ -626,10 +654,23 @@ public sealed class MainWindow : Window
         Capture.Handle(new CaptureRequest { Kind = "link", Url = url, QueueName = CurrentQueueName() });
     }
 
+    /// <summary>"Download video": a page link (YouTube, Instagram…) or a file link; the link is searched for videos
+    /// and every available quality is listed, a plain file link is downloaded as a file.</summary>
+    public void AddVideo()
+    {
+        var url = AddUrlDialog.Ask(this, video: true);
+        if (url is null) return;
+        Capture.Handle(new CaptureRequest { Kind = "media", Url = url, PageUrl = url, QueueName = CurrentQueueName() });
+    }
+
     private string CurrentQueueName() => _filter.StartsWith("queue:") ? _filter[6..] : Settings.Current.Queues.FirstOrDefault(q => q.IsRunning)?.Name ?? Settings.DefaultQueueName;
 
-    private void CreateQueue()
+    private void NewQueue() => CreateQueue();
+
+    /// <summary>Asks for a name and creates the queue; returns its name (null when cancelled).</summary>
+    private string? CreateQueue()
     {
+        string? created = null;
         var w = new Window { Title = L.T("قائمة انتظار جديدة"), Width = 380, SizeToContent = SizeToContent.Height, ResizeMode = ResizeMode.NoResize, WindowStartupLocation = WindowStartupLocation.CenterOwner, Owner = this };
         Ui.Setup(w, L.T("قائمة انتظار جديدة"), 380, 150);
         var input = Ui.Input();
@@ -637,8 +678,10 @@ public sealed class MainWindow : Window
         root.Children.Add(Ui.Label(L.T("اسم القائمة")));
         root.Children.Add(input);
         var actions = new StackPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(0, 14, 0, 0) };
-        var save = Ui.Button(L.T("إنشاء"), "", Theme.PrimaryButton, () => { if (!string.IsNullOrWhiteSpace(input.Text)) { _manager.CreateQueue(input.Text); w.Close(); } });
+        var save = Ui.Button(L.T("إنشاء"), "", Theme.PrimaryButton, () => { if (!string.IsNullOrWhiteSpace(input.Text)) { created = input.Text.Trim(); _manager.CreateQueue(created); w.Close(); } });
+        save.IsDefault = true;
         var cancel = Ui.Button(L.T("إلغاء"), style: Theme.Button, click: w.Close);
+        cancel.IsCancel = true;
         cancel.Margin = new Thickness(8, 0, 0, 0);
         actions.Children.Add(save);
         actions.Children.Add(cancel);
@@ -646,6 +689,7 @@ public sealed class MainWindow : Window
         w.Content = root;
         w.Loaded += (_, _) => input.Focus();
         w.ShowDialog();
+        return created is null ? null : Settings.Current.Queues.FirstOrDefault(q => string.Equals(q.Name, created, StringComparison.OrdinalIgnoreCase))?.Name ?? created;
     }
 
     public void OpenSettings()

@@ -11,10 +11,11 @@ namespace IbdmPro.App;
 /// <summary>"إضافة رابط": paste any link — a file, or a page with a video (YouTube, Instagram, Facebook…).</summary>
 public static class AddUrlDialog
 {
-    public static string? Ask(Window owner)
+    /// <param name="video">"Download video": the link is searched for videos and their qualities (a file link still works).</param>
+    public static string? Ask(Window owner, bool video = false)
     {
         var w = new Window { ResizeMode = ResizeMode.NoResize, SizeToContent = SizeToContent.Height, WindowStartupLocation = WindowStartupLocation.CenterOwner };
-        Ui.Setup(w, L.T("إضافة رابط"), 560, 220);
+        Ui.Setup(w, video ? L.T("تحميل فيديو") : L.T("إضافة رابط"), 560, 220);
         if (owner.IsVisible) w.Owner = owner;
         string? result = null;
         var input = Ui.Input();
@@ -27,12 +28,14 @@ public static class AddUrlDialog
         catch (Exception) { }
 
         var root = new StackPanel { Margin = new Thickness(22) };
-        root.Children.Add(Ui.Text(L.T("إضافة رابط تحميل"), 16, Theme.Ink, bold: true));
-        root.Children.Add(Ui.Text(L.T("الصق رابط ملف، أو رابط صفحة فيها فيديو (يوتيوب، انستغرام، فيسبوك، تيك توك…)"), 12, Theme.Muted, wrap: TextWrapping.Wrap));
+        root.Children.Add(Ui.Text(video ? L.T("تحميل فيديو من رابط") : L.T("إضافة رابط تحميل"), 16, Theme.Ink, bold: true));
+        root.Children.Add(Ui.Text(video
+            ? L.T("الصق رابط صفحة فيها فيديو أو رابط ملف — يبحث البرنامج عن الفيديو والجودات المتوفرة داخل الرابط.")
+            : L.T("الصق رابط ملف، أو رابط صفحة فيها فيديو (يوتيوب، انستغرام، فيسبوك، تيك توك…)"), 12, Theme.Muted, wrap: TextWrapping.Wrap));
         input.Margin = new Thickness(0, 14, 0, 16);
         root.Children.Add(input);
         var row = new StackPanel { Orientation = Orientation.Horizontal };
-        var ok = Ui.Button(L.T("متابعة"), "", Theme.PrimaryButton, () =>
+        var ok = Ui.Button(video ? L.T("بحث عن الفيديو") : L.T("متابعة"), "", Theme.PrimaryButton, () =>
         {
             var t = input.Text.Trim();
             if (!t.StartsWith("http", StringComparison.OrdinalIgnoreCase)) t = "https://" + t;

@@ -378,6 +378,10 @@ public static partial class L
         ["إضافة إلى قائمة الانتظار"] = "Add to queue",
         ["فتح البرنامج"] = "Open the program",
         ["يوجد تحميل جارٍ"] = "Download in progress",
+        ["إضافة المحدد إلى قائمة الانتظار"] = "Add selected to queue",
+        ["تحميل فيديو من رابط"] = "Download video from a link",
+        ["الصق رابط صفحة فيها فيديو أو رابط ملف — يبحث البرنامج عن الفيديو والجودات المتوفرة داخل الرابط."] = "Paste a link to a page with a video, or a file link — the app searches the link for the video and its available qualities.",
+        ["بحث عن الفيديو"] = "Find the video",
         ["صوتيات"] = "Audio",
         ["مضغوطات"] = "Compressed",
         ["برامج"] = "Programs",
@@ -387,4 +391,3 @@ public static partial class L
         ["أخرى"] = "Other",
     };
 }
-
