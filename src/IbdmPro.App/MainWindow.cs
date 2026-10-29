@@ -211,8 +211,10 @@ public sealed class MainWindow : Window
         menus.Items.Add(help);
         menus.Items.Add(registration);
 
-        var tools = new DockPanel { Height = 72, LastChildFill = false, Background = Theme.Panel, FlowDirection = FlowDirection.LeftToRight };
-        var buttons = new StackPanel { Orientation = Orientation.Horizontal, VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(4, 0, 8, 0), FlowDirection = FlowDirection.LeftToRight };
+        // Like the menus: in Arabic the buttons start on the right ("إضافة رابط" first), in English on the left.
+        var dir = L.Rtl ? FlowDirection.RightToLeft : FlowDirection.LeftToRight;
+        var tools = new DockPanel { Height = 72, LastChildFill = false, Background = Theme.Panel, FlowDirection = dir };
+        var buttons = new StackPanel { Orientation = Orientation.Horizontal, VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(4, 0, 8, 0), FlowDirection = dir };
         buttons.Children.Add(Ui.Tool(L.T("إضافة رابط"), "", AddUrl));
         buttons.Children.Add(Ui.Tool(L.T("تحميل فيديو"), "\uE714", AddVideo, Theme.Red));
         buttons.Children.Add(Ui.Tool(L.T("استئناف"), "", () => ForSelected(i => _manager.Resume(i)), Theme.Green));

@@ -16,6 +16,7 @@ public static class Program
     public static int Main(string[] args)
     {
         _ = Settings.Current; // loads the settings, which also sets the language (L.Lang) before any window exists
+        L.Brand = ProductName; // texts show "IBRA Download Manager"
         if (args.Length > 1 && args[0] == "--snapshot")
         {
             // Render the windows to pictures with sample data, without touching the real settings or list.

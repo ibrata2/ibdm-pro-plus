@@ -11,7 +11,17 @@ public static partial class L
     public static bool En => Lang == "en";
     public static bool Rtl => !En;
 
-    public static string T(string arabic) => En && English.TryGetValue(arabic, out var e) ? e : arabic;
+    /// <summary>The product name shown to the user (the app sets it at start). Texts are written with "IBDM Pro";
+    /// it is replaced here, except where the text names the downloads folder, which keeps its name.</summary>
+    public static string Brand { get; set; } = "IBDM Pro";
+
+    public static string T(string arabic)
+    {
+        var text = En && English.TryGetValue(arabic, out var e) ? e : arabic;
+        if (Brand == "IBDM Pro" || !text.Contains("IBDM Pro")) return text;
+        if (text.Contains("مجلد IBDM Pro") || text.Contains("IBDM Pro folder")) return text;
+        return text.Replace("IBDM Pro", Brand);
+    }
 
     public static string F(string arabic, params object?[] args) => string.Format(CultureInfo.CurrentCulture, T(arabic), args);
 
